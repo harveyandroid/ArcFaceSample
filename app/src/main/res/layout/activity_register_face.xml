@@ -5,12 +5,12 @@
     android:orientation="vertical">
 
 
-    <com.harvey.arcface.ui.SurfaceViewSaveFace
+    <com.harvey.arcface.view.SurfaceViewSaveFace
         android:id="@+id/surfaceViewSaveFace"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <com.harvey.arcface.ui.SurfaceViewCamera
+    <com.harvey.arcface.view.SurfaceViewCamera
         android:id="@+id/surfaceView_Camera"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

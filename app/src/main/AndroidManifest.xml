@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.harvey.arcface">
+    package="com.harvey.arcfacedamo">
 
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -18,15 +18,15 @@
         android:screenOrientation="portrait"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
+        <activity android:name="com.harvey.arcfacedamo.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ui.FaceScanActivity"></activity>
-        <activity android:name=".ui.FaceRegisterActivity"></activity>
+        <activity android:name="com.harvey.arcfacedamo.ui.FaceScanActivity"></activity>
+        <activity android:name="com.harvey.arcfacedamo.ui.FaceRegisterActivity"></activity>
 
         <meta-data
             android:name="com.harvey.image.CustomCachingGlideModule"
