@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="common_title_menu_text_size">14sp</dimen>
+    <dimen name="common_title_text_size">16sp</dimen>
+
+    <dimen name="common_text_size">14sp</dimen>
+    <dimen name="common_small_text_size">12sp</dimen>
+    <dimen name="common_big_text_size">25sp</dimen>
+
+    <dimen name="common_btn_height">40dp</dimen>
+    <dimen name="common_edit_text_height">40dp</dimen>
+    <dimen name="common_btn_text_size">16sp</dimen>
+
+    <dimen name="common_item_height">50dp</dimen>
+    <dimen name="common_item_text_size">14sp</dimen>
+
+
+    <dimen name="common_menu_item_height">50dp</dimen>
+    <dimen name="common_menu_item_text_size">14sp</dimen>
+
+    <dimen name="common_list_item_main_text_size">14sp</dimen>
+    <dimen name="common_list_item_minor_text_size">12sp</dimen>
+    <dimen name="common_list_item_small_text_size">10sp</dimen>
+
+    <dimen name="mine_avatar_width">70dp</dimen>
+    <dimen name="common_item_avatar_width">44dp</dimen>
+
+</resources>
