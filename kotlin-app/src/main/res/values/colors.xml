@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <!-- 10%不透明 -->
+    <color name="transparent_10_bg">#e5000000</color>
+
+    <!-- 20%不透明 -->
+    <color name="transparent_20_bg">#cc000000</color>
+
+    <!-- 40%不透明 -->
+    <color name="transparent_40_bg">#99000000</color>
+
+    <!-- 50%不透明 -->
+    <color name="transparent_50_bg">#80000000</color>
+
+    <!-- 60%不透明 -->
+    <color name="transparent_60_bg">#66000000</color>
+
+    <!-- 90%不透明 -->
+    <color name="transparent_90_bg">#19000000</color>
+
+    <!-- 50%透明 -->
+    <color name="transparent_white_50_bg">#80ffffff</color>
+
+</resources>

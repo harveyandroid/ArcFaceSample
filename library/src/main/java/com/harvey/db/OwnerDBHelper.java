@@ -17,7 +17,7 @@ import java.util.List;
  */
 public class OwnerDBHelper {
     private final static String TAG = "RobotDBHelper";
-    public static String DATABASE_NAME = "avatar_robot.db";
+    public static String DATABASE_NAME = "arc_face.db";
     private volatile static OwnerDBHelper instance;
     private DaoMaster daoMaster;
     private DaoSession daoSession;

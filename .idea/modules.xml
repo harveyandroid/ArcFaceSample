@@ -4,7 +4,10 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/ArcFaceSample.iml" filepath="$PROJECT_DIR$/ArcFaceSample.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/library/arcface-library.iml" filepath="$PROJECT_DIR$/library/arcface-library.iml" />
+      <module fileurl="file://F:\MyGitHub\ArcFaceSample\library\arcface-library.iml" filepath="F:\MyGitHub\ArcFaceSample\library\arcface-library.iml" />
+      <module fileurl="file://$PROJECT_DIR$/kotlin-app/kotlin-app.iml" filepath="$PROJECT_DIR$/kotlin-app/kotlin-app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/kotlin-library/kotlin-library.iml" filepath="$PROJECT_DIR$/kotlin-library/kotlin-library.iml" />
+      <module fileurl="file://$PROJECT_DIR$/library/library.iml" filepath="$PROJECT_DIR$/library/library.iml" />
     </modules>
   </component>
 </project>
