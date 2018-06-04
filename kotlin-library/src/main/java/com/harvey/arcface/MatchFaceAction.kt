@@ -26,21 +26,11 @@ class MatchFaceAction : Runnable {
     private var mMatchFaceLooper: Looper
     @Volatile private var isInit = false
     private var registeredFaces = OwnerDBHelper.registeredFaces
-    private var faceObserver: Observer = Observer { o, arg ->
-        when (arg) {
-            OwnerDBHelper.UPDATE_FACE_TAG -> {
-                registeredFaces = OwnerDBHelper.registeredFaces
-                println("本地人脸数据:$registeredFaces")
-            }
-        }
-    }
-
     init {
         val matchFaceThread = HandlerThread("MatchFace")
         matchFaceThread.start()
         mMatchFaceLooper = matchFaceThread.looper
         mMatchFaceHandler = Handler(mMatchFaceLooper)
-        OwnerDBHelper.addObserver(faceObserver)
         isInit = true
     }
 
@@ -49,7 +39,6 @@ class MatchFaceAction : Runnable {
         if (isInit) {
             mMatchFaceLooper.quit()
         }
-        OwnerDBHelper.deleteObserver(faceObserver)
         faceFindModels.clear()
         matchListener = null
         frameBytes = null
@@ -98,7 +87,7 @@ class MatchFaceAction : Runnable {
     }
 
     private fun callOnFaceMatch(face: FaceFindMatchModel) {
-        Log.d(TAG, "人脸匹配结果-->" + face.toString())
+        Log.e(TAG, "人脸匹配结果-->" + face.toString())
         if (matchListener != null && !TextUtils.isEmpty(face.name)) {
             MainHandler.run(Runnable { matchListener!!.onFaceMatch(face) })
         }
