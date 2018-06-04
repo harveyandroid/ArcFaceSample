@@ -20,7 +20,6 @@ class SurfaceViewFace(content: Context, attrs: AttributeSet) : SurfaceView(conte
     // 旋转图片
     private var scan1: Bitmap? = null
     private var scan2: Bitmap? = null
-    private var scan3: Bitmap? = null
     // SurfaceView尺寸
     private var surfaceWidth: Int = 0
     private var surfaceHeight: Int = 0
@@ -33,7 +32,6 @@ class SurfaceViewFace(content: Context, attrs: AttributeSet) : SurfaceView(conte
         surfaceHolder.setFormat(PixelFormat.TRANSPARENT)
         scan1 = BitmapFactory.decodeResource(resources, R.drawable.scan1)
         scan2 = BitmapFactory.decodeResource(resources, R.drawable.scan2)
-        scan3 = BitmapFactory.decodeResource(resources, R.drawable.scan3)
     }
 
     // 更新人脸列表
@@ -52,7 +50,6 @@ class SurfaceViewFace(content: Context, attrs: AttributeSet) : SurfaceView(conte
         surfaceStop = true
         scan1!!.recycle()
         scan2!!.recycle()
-        scan3!!.recycle()
         while (thread.isAlive) {
         }
     }
@@ -95,7 +92,7 @@ class SurfaceViewFace(content: Context, attrs: AttributeSet) : SurfaceView(conte
             }
         }
 
-        private fun drawNoFindFace(canvas: Canvas?, faceFindModel: FaceFindModel) {
+        private fun drawNoFindFace(canvas: Canvas, faceFindModel: FaceFindModel) {
             val matrix = Matrix()
             val matrix2 = Matrix()
 
@@ -118,7 +115,7 @@ class SurfaceViewFace(content: Context, attrs: AttributeSet) : SurfaceView(conte
             matrix.postTranslate(centerX.toFloat(), centerY.toFloat())// 步骤3 屏幕的中心点
             matrix2.postTranslate(centerX.toFloat(), centerY.toFloat())// 步骤3 屏幕的中心点
 
-            canvas!!.drawBitmap(scan1, matrix, null)
+            canvas.drawBitmap(scan1, matrix, null)
             canvas.drawBitmap(scan2, matrix2, null)
         }
 

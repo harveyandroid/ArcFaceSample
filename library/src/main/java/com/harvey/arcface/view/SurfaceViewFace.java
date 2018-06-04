@@ -28,7 +28,6 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
 	// 旋转图片
 	private Bitmap scan1;
 	private Bitmap scan2;
-	private Bitmap scan3;
 	// SurfaceView尺寸
 	private int surfaceWidth;
 	private int surfaceHeight;
@@ -115,7 +114,6 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
 		surfaceStop = true;
 		scan1 = BitmapFactory.decodeResource(getResources(), R.drawable.scan1);
 		scan2 = BitmapFactory.decodeResource(getResources(), R.drawable.scan2);
-		scan3 = BitmapFactory.decodeResource(getResources(), R.drawable.scan3);
 		surfaceWidth = getWidth();
 		surfaceHeight = getHeight();
 		thread = new Thread(drawRunnable);
@@ -133,7 +131,6 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
 		surfaceStop = true;
 		scan1.recycle();
 		scan2.recycle();
-		scan3.recycle();
 		while (thread.isAlive()) {
 		}
 	}

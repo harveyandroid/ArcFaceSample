@@ -127,14 +127,18 @@ public class FaceFindModel implements Parcelable {
 		// int top = faceRect.top * mappedHeight / cameraHeight;
 		// int right = faceRect.left * mappedWidth / cameraWidth;
 		// int bottom = faceRect.bottom * mappedHeight / cameraHeight;
-
 		// 根据摄像头进行转化(垂直视角)
-		int top = faceRect.right * mappedWidth / cameraWidth;
-
-		int right = mappedHeight - faceRect.top * mappedHeight / cameraHeight;
-
-		int bottom = faceRect.left * mappedWidth / cameraWidth;
 		int left = mappedHeight - faceRect.bottom * mappedHeight / cameraHeight;
+		int right = mappedHeight - faceRect.top * mappedHeight / cameraHeight;
+		int top;
+		int bottom;
+		if (getOrientation() == 270) {// 前置
+			top = mappedWidth - faceRect.right * mappedWidth / cameraWidth;
+			bottom = mappedWidth - faceRect.left * mappedWidth / cameraWidth;
+		} else {
+			top = faceRect.right * mappedWidth / cameraWidth;
+			bottom = faceRect.left * mappedWidth / cameraWidth;
+		}
 
 		Rect rect = new Rect(left, top, right, bottom);
 		return rect;
