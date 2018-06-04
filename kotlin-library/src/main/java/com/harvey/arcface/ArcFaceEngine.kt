@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.util.*
 
 /**
  * Created by hanhui on 2018/6/1 0001 10:10
@@ -42,18 +43,13 @@ object ArcFaceEngine {
     // 对比置信度
     private const val SCORE = 0.75f
 
-    private val FT_engine: AFT_FSDKEngine// 视频人脸跟踪
-    private val SAE_engine: ASAE_FSDKEngine// 年龄检测
-    private val FD_engine: AFD_FSDKEngine// 人脸检测
-    private val FR_engine: AFR_FSDKEngine// 人脸对比
-    private val SGE_engine: ASGE_FSDKEngine// 性别检测
+    private val FT_engine = AFT_FSDKEngine()// 视频人脸跟踪
+    private val SAE_engine = ASAE_FSDKEngine()// 年龄检测
+    private val FD_engine = AFD_FSDKEngine()// 人脸检测
+    private val FR_engine = AFR_FSDKEngine()// 人脸对比
+    private val SGE_engine = ASGE_FSDKEngine()// 性别检测
 
     init {
-        FT_engine = AFT_FSDKEngine()
-        FD_engine = AFD_FSDKEngine()
-        FR_engine = AFR_FSDKEngine()
-        SAE_engine = ASAE_FSDKEngine()
-        SGE_engine = ASGE_FSDKEngine()
         val SAE_err = SAE_engine.ASAE_FSDK_InitAgeEngine(APP_ID, SAE_SDK_KEY)
         if (SAE_err.code != ASAE_FSDKError.MOK)
             Log.e(TAG, "ASAE_FSDK_InitAgeEngine = " + SAE_err.code)
@@ -118,7 +114,7 @@ object ArcFaceEngine {
                 registeredFace.name = name
                 registeredFace.imagePath = imgFile
                 registeredFace.setFaceTime(System.currentTimeMillis())
-                Log.d(TAG, "人脸信息保存到本地数据库：" + registeredFace.toString())
+                Log.e(TAG, "人脸信息保存到本地数据库：" + registeredFace.toString())
                 OwnerDBHelper.saveRegisteredFace(registeredFace)
                 isSuccess = true
             } catch (e: IOException) {
@@ -126,7 +122,7 @@ object ArcFaceEngine {
             }
 
         } else {
-            Log.d(TAG, "人脸特征生成出错：" + error.code)
+            Log.e(TAG, "人脸特征生成出错：" + error.code)
         }
         return isSuccess
     }
@@ -217,7 +213,7 @@ object ArcFaceEngine {
 
 
     @Throws(IOException::class)
-    fun saveFaceImage(filepath: String, faceFindModel: FaceFindModel, data: ByteArray) {
+    private fun saveFaceImage(filepath: String, faceFindModel: FaceFindModel, data: ByteArray) {
         val stream = FileOutputStream(filepath)
         val ops = ByteArrayOutputStream()
         val yuv = YuvImage(data, ImageFormat.NV21, faceFindModel.cameraWidth,

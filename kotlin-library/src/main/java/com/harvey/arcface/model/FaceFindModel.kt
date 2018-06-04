@@ -7,6 +7,7 @@ import android.graphics.Rect
  */
 data class FaceFindModel(var cameraWidth: Int = 0, var cameraHeight: Int = 0, var faceRect: Rect = Rect(), var degree: Int = 0) {
 
+
     // 扩大人脸矩形框范围
     fun getFaceMoreRect(): Rect {
         val more_width = faceRect.width() / 3
