@@ -3,19 +3,16 @@ package com.harvey.arcfacedemo.ui
 import android.hardware.Camera
 import android.os.Bundle
 import android.os.Handler
-import android.os.Message
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
 import android.view.View
 import com.harvey.arcface.DetectFaceAction
 import com.harvey.arcface.MatchFaceAction
 import com.harvey.arcface.model.FaceFindMatchModel
 import com.harvey.arcface.model.FaceFindModel
-import com.harvey.arcface.view.SurfaceViewCamera
-import com.harvey.arcface.view.SurfaceViewFace
 import com.harvey.arcfacedemo.R
 import com.harvey.arcfacedemo.adapter.MatchFaceAdapter
+import kotlinx.android.synthetic.main.activity_scan_face.*
 import java.util.concurrent.TimeUnit
 
 /**
@@ -29,9 +26,7 @@ class FaceScanActivity : AppCompatActivity(), Camera.PreviewCallback, DetectFace
     private val matchFaceAction: MatchFaceAction by lazy {
         MatchFaceAction()
     }
-    private lateinit var surfaceViewFace: SurfaceViewFace
-    private lateinit var surfaceViewCamera: SurfaceViewCamera
-    private lateinit var faceList: RecyclerView
+
     private lateinit var matchFaceAdapter: MatchFaceAdapter
 
     private val mHandler = Handler(Handler.Callback { msg ->
@@ -43,18 +38,8 @@ class FaceScanActivity : AppCompatActivity(), Camera.PreviewCallback, DetectFace
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(contentViewId)
-        initHolder()
+        setContentView(R.layout.activity_scan_face)
         initData()
-    }
-
-    private val contentViewId: Int
-        get() = R.layout.activity_scan_face
-
-    private fun initHolder() {
-        surfaceViewCamera = findViewById(R.id.surfaceView_Camera)
-        surfaceViewFace = findViewById(R.id.surfaceViewFace)
-        faceList = findViewById(R.id.face_list)
     }
 
     private fun initData() {
