@@ -91,39 +91,41 @@ class FaceRegisterActivity : AppCompatActivity(), Camera.PreviewCallback, Detect
         dialogLayout.extimageview.setImageBitmap(faceBitmap)
         registerDialog = AlertDialog.Builder(this).setTitle("是否注册该图片?").setIcon(android.R.drawable.ic_dialog_info)
                 .setView(dialogLayout).setPositiveButton("确定", null)
-                .setNegativeButton("取消") { dialog, which ->
+                .setNegativeButton("取消") { dialog, _ ->
                     if (!faceBitmap.isRecycled)
                         faceBitmap.recycle()
                     surfaceViewSaveFace.reset()
                     dialog.dismiss()
                 }.create()
         registerDialog?.show()
-        registerDialog!!.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            faceName = dialogLayout.et_name.text.toString().trim { it <= ' ' }
-            faceAge = dialogLayout.et_age.text.toString().trim { it <= ' ' }
-            when {
-                TextUtils.isEmpty(faceName) -> showToast(this, "请输入姓名！")
-                TextUtils.isEmpty(faceAge) -> showToast(this, "请输入年龄！")
-                TextUtils.isEmpty(faceSex) -> showToast(this, "请选择性别！")
-                else -> {
-                    val result = ArcFaceEngine.saveFace(data, faceModel, faceName,
-                            faceAge.toInt(), faceSex, application.externalCacheDir.path)
-                    if (result)
-                        showToast(this, "注册人脸成功！")
-                    else
-                        showToast(this, "注册人脸失败！")
-                    if (!faceBitmap.isRecycled)
-                        faceBitmap.recycle()
-                    surfaceViewSaveFace.reset()
-                    registerDialog!!.dismiss()
+        registerDialog?.let {
+            it.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                faceName = dialogLayout.et_name.text.toString().trim { it <= ' ' }
+                faceAge = dialogLayout.et_age.text.toString().trim { it <= ' ' }
+                when {
+                    TextUtils.isEmpty(faceName) -> showToast("请输入姓名！")
+                    TextUtils.isEmpty(faceAge) -> showToast("请输入年龄！")
+                    TextUtils.isEmpty(faceSex) -> showToast("请选择性别！")
+                    else -> {
+                        val result = ArcFaceEngine.saveFace(data, faceModel, faceName,
+                                faceAge.toInt(), faceSex, application.externalCacheDir.path)
+                        if (result)
+                            showToast("注册人脸成功！")
+                        else
+                            showToast("注册人脸失败！")
+                        if (!faceBitmap.isRecycled)
+                            faceBitmap.recycle()
+                        surfaceViewSaveFace.reset()
+                        registerDialog!!.dismiss()
+                    }
                 }
             }
+            it.setCanceledOnTouchOutside(false)
         }
-        registerDialog?.setCanceledOnTouchOutside(false)
     }
 
-    private fun showToast(context: Context, msg: String) {
-        Toast.makeText(context.applicationContext, msg, Toast.LENGTH_SHORT).show()
+    private fun Context.showToast(msg: String) {
+        Toast.makeText(this.applicationContext, msg, Toast.LENGTH_SHORT).show()
 
     }
 
