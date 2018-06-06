@@ -72,9 +72,7 @@ class DetectFaceAction : Runnable {
     private fun callOnFaceDetect(data: List<FaceFindModel>) {
         if (data.isNotEmpty())
             Log.d(TAG, "检测人脸数量-->" + data.size)
-        if (faceDetectListener != null) {
-            MainHandler.run(Runnable { faceDetectListener!!.onFaceDetect(data, frameBytes!!) })
-        }
+        MainHandler.run(Runnable { faceDetectListener?.onFaceDetect(data, frameBytes!!) })
     }
 
     interface OnFaceDetectListener {

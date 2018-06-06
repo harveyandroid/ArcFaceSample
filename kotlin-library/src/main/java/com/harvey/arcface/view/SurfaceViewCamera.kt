@@ -17,12 +17,12 @@ import java.io.IOException
 class SurfaceViewCamera(context: Context, attrs: AttributeSet) : SurfaceView(context, attrs), SurfaceHolder.Callback {
 
     private var currentCameraId = Camera.CameraInfo.CAMERA_FACING_FRONT
-    private val surfaceHolder: SurfaceHolder? = holder
+    private var surfaceHolder = holder
     private var mCamera: Camera? = null
     private var previewCallback: Camera.PreviewCallback? = null
 
     init {
-        surfaceHolder!!.addCallback(this)
+        surfaceHolder.addCallback(this)
     }
 
     fun setCameraCallBack(previewCallback: Camera.PreviewCallback) {
@@ -30,7 +30,7 @@ class SurfaceViewCamera(context: Context, attrs: AttributeSet) : SurfaceView(con
     }
 
     fun switchCamera() {
-        if (Camera.getNumberOfCameras() == 1 || surfaceHolder == null)
+        if (Camera.getNumberOfCameras() == 1)
             return
         currentCameraId = if (currentCameraId == Camera.CameraInfo.CAMERA_FACING_FRONT)
             Camera.CameraInfo.CAMERA_FACING_BACK
@@ -43,21 +43,23 @@ class SurfaceViewCamera(context: Context, attrs: AttributeSet) : SurfaceView(con
     private fun openCamera() {
         try {
             mCamera = Camera.open(currentCameraId)
-            mCamera!!.setPreviewDisplay(surfaceHolder)
-            mCamera!!.setPreviewCallback(previewCallback)
+            mCamera?.setPreviewDisplay(surfaceHolder)
+            mCamera?.setPreviewCallback(previewCallback)
             // 参数设定
-            val cameraParams = mCamera!!.parameters
-            for (size in cameraParams.supportedPreviewSizes) {
-                Log.e("SurfaceViewCamera", "SIZE:" + size.width + "x" + size.height)
+            val cameraParams = mCamera?.parameters
+            cameraParams?.let {
+                for (size in it.supportedPreviewSizes) {
+                    Log.e("SurfaceViewCamera", "SIZE:" + size.width + "x" + size.height)
+                }
+                for (format in it.supportedPreviewFormats) {
+                    Log.e("SurfaceViewCamera", "FORMAT:" + format)
+                }
+                it.pictureFormat = ImageFormat.JPEG
+                it.previewFormat = ImageFormat.NV21
             }
-            for (format in cameraParams.supportedPreviewFormats) {
-                Log.e("SurfaceViewCamera", "FORMAT:" + format!!)
-            }
-            cameraParams.pictureFormat = ImageFormat.JPEG
-            cameraParams.previewFormat = ImageFormat.NV21
             setCameraDisplayOrientation()
-            mCamera!!.parameters = cameraParams
-            mCamera!!.startPreview()
+            mCamera?.parameters = cameraParams
+            mCamera?.startPreview()
         } catch (e: IOException) {
             e.printStackTrace()
             closeCamera()
@@ -66,12 +68,10 @@ class SurfaceViewCamera(context: Context, attrs: AttributeSet) : SurfaceView(con
     }
 
     private fun closeCamera() {
-        if (null != mCamera) {
-            mCamera!!.setPreviewCallback(null)
-            mCamera!!.stopPreview()
-            mCamera!!.release()
-            mCamera = null
-        }
+        mCamera?.setPreviewCallback(null)
+        mCamera?.stopPreview()
+        mCamera?.release()
+        mCamera = null
     }
 
     private fun setCameraDisplayOrientation() {
@@ -95,7 +95,7 @@ class SurfaceViewCamera(context: Context, attrs: AttributeSet) : SurfaceView(con
             } else { // back-facing
                 result = (cameraInfo.orientation - degrees + 360) % 360
             }
-            mCamera!!.setDisplayOrientation(result)
+            mCamera?.setDisplayOrientation(result)
         } catch (ex: Exception) {
 
         }

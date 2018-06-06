@@ -48,8 +48,8 @@ class SurfaceViewFace(content: Context, attrs: AttributeSet) : SurfaceView(conte
     override fun surfaceDestroyed(holder: SurfaceHolder?) {
         surfaceRun = false
         surfaceStop = true
-        scan1!!.recycle()
-        scan2!!.recycle()
+        scan1?.recycle()
+        scan2?.recycle()
         while (thread.isAlive) {
         }
     }
@@ -95,15 +95,16 @@ class SurfaceViewFace(content: Context, attrs: AttributeSet) : SurfaceView(conte
         private fun drawNoFindFace(canvas: Canvas, faceFindModel: FaceFindModel) {
             val matrix = Matrix()
             val matrix2 = Matrix()
-
-            matrix.postTranslate((-scan1!!.width / 2).toFloat(), (-scan1!!.height / 2).toFloat())// 步骤1
-            matrix2.postTranslate((-scan2!!.width / 2).toFloat(), (-scan2!!.height / 2).toFloat())// 步骤1
-
+            val scan1Width = scan1?.width ?: 0
+            val scan1Height = scan1?.height ?: 0
+            val scan2Width = scan2?.width ?: 0
+            val scan2Height = scan2?.height ?: 0
+            matrix.postTranslate((-scan1Width / 2).toFloat(), (-scan1Height / 2).toFloat())// 步骤1
+            matrix2.postTranslate((-scan2Width / 2).toFloat(), (-scan2Height / 2).toFloat())// 步骤1
             matrix.postRotate(drawRotate.toFloat())// 步骤2
             matrix2.postRotate((360 - drawRotate * 2).toFloat())// 步骤2
-
             // 缩放
-            val scaleWidth = faceFindModel.faceRect.width().toFloat() * surfaceWidth.toFloat() / faceFindModel.cameraWidth.toFloat() / scan1!!.width
+            val scaleWidth = faceFindModel.faceRect.width().toFloat() * surfaceWidth.toFloat() / faceFindModel.cameraWidth.toFloat() / scan1Width
             matrix.postScale(scaleWidth, scaleWidth)
             matrix2.postScale(scaleWidth, scaleWidth)
             // 中心点计算

@@ -21,14 +21,12 @@ class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(c
     private val surfaceHolder: SurfaceHolder = holder
     private var surfaceRun = false
     private var surfaceStop = true
-    // SurfaceView尺寸
     private var surfaceWidth: Int = 0
     private var surfaceHeight: Int = 0
     private var saveFaceHandler = SaveFaceHandler()
-    // 人脸数据列表
-    private var faceModel: FaceFindCameraModel? = null
-    private var thread: Thread? = null
-    private var faceOut: Rect? = null
+    private var faceModel = FaceFindCameraModel()
+    private lateinit var thread: Thread
+    private lateinit var faceOut: Rect
     private var timeCount = 0
     private var drawRunnable: Runnable = object : Runnable {
 
@@ -38,25 +36,23 @@ class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(c
                     // 判断相框时间>时间退出
                     if (timeCount * SLEEP_COUNT > TimeSecondDown * 1000) {
                         surfaceStop = true
-                        saveFaceHandler.onSuccess(faceModel!!.clone())
+                        saveFaceHandler.onSuccess(faceModel.clone())
                         continue
                     }
                     val canvas = surfaceHolder.lockCanvas()
                     if (canvas != null) {
                         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
-
-                        if (faceModel == null || faceModel!!.faceFindModels == null
-                                || faceModel!!.faceFindModels.isEmpty()) {
+                        if (faceModel.faceFindModels.isEmpty()) {
                             drawFaceOutRect(canvas, false)
                             callErrorBack(ERROR_NOFACE)
-                        } else if (faceModel!!.faceFindModels.size != 1) {
+                        } else if (faceModel.faceFindModels.size != 1) {
                             drawFaceOutRect(canvas, false)
                             callErrorBack(ERROR_MOREFACE)
                         } else {
-                            val face = faceModel!!.faceFindModels.get(0).getMappedFaceRect(surfaceHeight,
+                            val face = faceModel.faceFindModels[0].getMappedFaceRect(surfaceHeight,
                                     surfaceWidth)
                             // 在矩形框外侧
-                            if (!faceOut!!.contains(face)) {
+                            if (!faceOut.contains(face)) {
                                 drawFaceOutRect(canvas, false)
                                 drawFaceRect(canvas, face, false, "在矩形框外侧")
                                 callErrorBack(ERROR_OUTFACE)
@@ -102,7 +98,7 @@ class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(c
         }
 
         // 绘制外矩形框
-        private fun drawFaceOutRect(canvas: Canvas?, success: Boolean) {
+        private fun drawFaceOutRect(canvas: Canvas, success: Boolean) {
             val paint = Paint()
             if (success)
                 paint.color = Color.parseColor("#3498db")
@@ -111,11 +107,11 @@ class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(c
 
             paint.strokeWidth = 20f
             paint.style = Paint.Style.STROKE
-            canvas!!.drawRect(faceOut!!, paint)
+            canvas.drawRect(faceOut, paint)
         }
 
         // 绘制人脸框
-        private fun drawFaceRect(canvas: Canvas?, face: Rect, success: Boolean) {
+        private fun drawFaceRect(canvas: Canvas, face: Rect, success: Boolean) {
             val paint = Paint()
             if (success)
                 paint.color = Color.parseColor("#3498db")
@@ -124,11 +120,11 @@ class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(c
 
             paint.strokeWidth = 10f
             paint.style = Paint.Style.STROKE
-            canvas!!.drawRect(face, paint)
+            canvas.drawRect(face, paint)
         }
 
         // 绘制人脸框
-        private fun drawFaceRect(canvas: Canvas?, face: Rect, success: Boolean, remindText: String) {
+        private fun drawFaceRect(canvas: Canvas, face: Rect, success: Boolean, remindText: String) {
             val paint = Paint()
             if (success)
                 paint.color = Color.parseColor("#3498db")
@@ -137,7 +133,7 @@ class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(c
 
             paint.strokeWidth = 10f
             paint.style = Paint.Style.STROKE
-            canvas!!.drawRect(face, paint)
+            canvas.drawRect(face, paint)
             // 绘制坐标
             paint.reset()
             paint.textSize = 16f
@@ -187,12 +183,8 @@ class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(c
             return
         if (surfaceStop)
             return
-        if (this.faceModel == null) {
-            faceModel = FaceFindCameraModel(faceFindModels, frameBytes)
-        } else {
-            faceModel!!.faceFindModels = faceFindModels
-            faceModel!!.cameraData = frameBytes
-        }
+        faceModel.faceFindModels = faceFindModels
+        faceModel.cameraData = frameBytes
     }
 
     fun setSaveFaceListener(saveFaceListener: SaveFaceListener?) {
@@ -205,7 +197,7 @@ class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(c
         surfaceWidth = width
         surfaceHeight = height
         thread = Thread(drawRunnable)
-        thread!!.start()
+        thread.start()
         faceOut = Rect(100, 100, 100 + surfaceWidth - 200, 100 + surfaceHeight - 200)
     }
 
@@ -217,12 +209,12 @@ class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(c
         setSaveFaceListener(null)
         surfaceRun = false
         surfaceStop = true
-        while (thread!!.isAlive) {
+        while (thread.isAlive) {
         }
     }
 
     interface SaveFaceListener {
-        fun onSuccess(faceModel: FaceFindCameraModel?)
+        fun onSuccess(faceModel: FaceFindCameraModel)
         fun onTimeSecondDown(TimeSecond: Int)
         fun onErrorMsg(errorCode: Int)
     }
@@ -262,12 +254,10 @@ class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(c
 
         override fun handleMessage(msg: Message) {
             super.handleMessage(msg)
-            if (msaveFaceListener != null) {
-                when (msg.what) {
-                    onSuccess -> msaveFaceListener!!.onSuccess(msg.obj as FaceFindCameraModel)
-                    onTimeSecondDown -> msaveFaceListener!!.onTimeSecondDown(msg.obj as Int)
-                    onErrorMsg -> msaveFaceListener!!.onErrorMsg(msg.obj as Int)
-                }
+            when (msg.what) {
+                onSuccess -> msaveFaceListener?.onSuccess(msg.obj as FaceFindCameraModel)
+                onTimeSecondDown -> msaveFaceListener?.onTimeSecondDown(msg.obj as Int)
+                onErrorMsg -> msaveFaceListener?.onErrorMsg(msg.obj as Int)
             }
         }
     }

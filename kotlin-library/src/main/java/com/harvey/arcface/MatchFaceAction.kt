@@ -88,8 +88,8 @@ class MatchFaceAction : Runnable {
 
     private fun callOnFaceMatch(face: FaceFindMatchModel) {
         Log.e(TAG, "人脸匹配结果-->" + face.toString())
-        if (matchListener != null && !TextUtils.isEmpty(face.name)) {
-            MainHandler.run(Runnable { matchListener!!.onFaceMatch(face) })
+        if (!TextUtils.isEmpty(face.name)) {
+            MainHandler.run(Runnable { matchListener?.onFaceMatch(face) })
         }
     }
 

@@ -28,9 +28,9 @@ class FaceRegisterActivity : AppCompatActivity(), Camera.PreviewCallback, Detect
         DetectFaceAction()
     }
     private lateinit var dialogLayout: View
-    private var faceName: String? = null
-    private var faceAge: String? = null
-    private var faceSex: String? = null
+    private var faceName = ""
+    private var faceAge = "0"
+    private var faceSex = ""
     private var registerDialog: AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,8 +63,8 @@ class FaceRegisterActivity : AppCompatActivity(), Camera.PreviewCallback, Detect
         surfaceViewSaveFace.uploadTimeSecondDown(1)
         surfaceViewSaveFace.setSaveFaceListener(object : SurfaceViewSaveFace.SaveFaceListener {
 
-            override fun onSuccess(faceModel: FaceFindCameraModel?) {
-                if (faceModel != null && faceModel.faceFindModels.isNotEmpty()) {
+            override fun onSuccess(faceModel: FaceFindCameraModel) {
+                if (faceModel.faceFindModels.isNotEmpty()) {
                     showSaveFaceDialog(faceModel.faceFindModels[0], faceModel.cameraData)
                 }
             }
@@ -81,7 +81,7 @@ class FaceRegisterActivity : AppCompatActivity(), Camera.PreviewCallback, Detect
 
     fun showSaveFaceDialog(faceModel: FaceFindModel, data: ByteArray) {
         if (registerDialog != null && registerDialog!!.isShowing) {
-            registerDialog!!.dismiss()
+            registerDialog?.dismiss()
         }
         val parent = dialogLayout.parent
         if (parent != null) {
@@ -97,7 +97,7 @@ class FaceRegisterActivity : AppCompatActivity(), Camera.PreviewCallback, Detect
                     surfaceViewSaveFace.reset()
                     dialog.dismiss()
                 }.create()
-        registerDialog!!.show()
+        registerDialog?.show()
         registerDialog!!.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
             faceName = dialogLayout.et_name.text.toString().trim { it <= ' ' }
             faceAge = dialogLayout.et_age.text.toString().trim { it <= ' ' }
@@ -106,8 +106,8 @@ class FaceRegisterActivity : AppCompatActivity(), Camera.PreviewCallback, Detect
                 TextUtils.isEmpty(faceAge) -> showToast(this, "请输入年龄！")
                 TextUtils.isEmpty(faceSex) -> showToast(this, "请选择性别！")
                 else -> {
-                    val result = ArcFaceEngine.saveFace(data, faceModel, faceName!!,
-                            Integer.valueOf(faceAge)!!, faceSex!!, application.externalCacheDir!!.path)
+                    val result = ArcFaceEngine.saveFace(data, faceModel, faceName,
+                            faceAge.toInt(), faceSex, application.externalCacheDir.path)
                     if (result)
                         showToast(this, "注册人脸成功！")
                     else
@@ -119,7 +119,7 @@ class FaceRegisterActivity : AppCompatActivity(), Camera.PreviewCallback, Detect
                 }
             }
         }
-        registerDialog!!.setCanceledOnTouchOutside(false)
+        registerDialog?.setCanceledOnTouchOutside(false)
     }
 
     private fun showToast(context: Context, msg: String) {

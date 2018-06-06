@@ -6,8 +6,8 @@ import java.util.*
 /**
  * Created by hanhui on 2018/6/1 0001 13:55
  */
-data class FaceFindCameraModel(var faceFindModels: List<FaceFindModel>,
-                               var cameraData: ByteArray) {
+data class FaceFindCameraModel(var faceFindModels: List<FaceFindModel> = ArrayList(),
+                               var cameraData: ByteArray = ByteArray(0)) {
 
     fun clone(): FaceFindCameraModel {
         for (model in faceFindModels) model.faceRect = Rect(model.faceRect)
