@@ -13,7 +13,7 @@ import android.view.WindowManager;
 import java.io.IOException;
 
 /**
- * Created by hanhui on 2018/5/30 0030 17:22
+ * Created by harvey on 2018/5/30 0030 17:22
  */
 
 public class SurfaceViewCamera extends SurfaceView implements SurfaceHolder.Callback {

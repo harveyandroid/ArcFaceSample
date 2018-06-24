@@ -13,7 +13,7 @@ import com.bumptech.glide.module.GlideModule;
 
 
 /**
- * Created by hanhui on 2016/9/1 0001 11:44
+ * Created by harvey on 2016/9/1 0001 11:44
  */
 public class CustomCachingGlideModule implements GlideModule {
 	public static final String GLIDE_CACHE_PATH = "Avatar";

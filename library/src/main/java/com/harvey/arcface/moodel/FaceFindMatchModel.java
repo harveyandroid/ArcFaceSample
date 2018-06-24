@@ -3,7 +3,7 @@ package com.harvey.arcface.moodel;
 import java.io.Serializable;
 
 /**
- * Created by hanhui on 2018/1/12.
+ * Created by harvey on 2018/1/12.
  */
 
 public class FaceFindMatchModel implements Serializable {

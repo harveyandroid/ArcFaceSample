@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Created by Kenny on 2018/1/12.
+ * Created by harvey on 2018/1/12.
  */
 
 public class SurfaceViewSaveFace extends SurfaceView implements SurfaceHolder.Callback {

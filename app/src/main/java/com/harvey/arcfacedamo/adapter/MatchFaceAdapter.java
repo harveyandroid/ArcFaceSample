@@ -9,7 +9,7 @@ import com.harvey.arcface.moodel.FaceFindMatchModel;
 import com.harvey.image.ImageLoader;
 
 /**
- * Created by hanhui on 2017/11/22 0022 14:19
+ * Created by harvey on 2017/11/22 0022 14:19
  */
 
 public class MatchFaceAdapter extends BaseQuickAdapter<FaceFindMatchModel, BaseViewHolder> {

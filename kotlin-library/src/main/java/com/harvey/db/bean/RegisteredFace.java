@@ -5,7 +5,7 @@ import org.greenrobot.greendao.annotation.Generated;
 import org.greenrobot.greendao.annotation.Id;
 
 /**
- * Created by hanhui on 2018/4/25 0025 15:33
+ * Created by harvey on 2018/4/25 0025 15:33
  */
 @Entity
 public class RegisteredFace {

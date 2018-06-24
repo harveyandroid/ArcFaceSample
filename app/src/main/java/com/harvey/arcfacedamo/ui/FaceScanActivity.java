@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by Kenny on 2018/1/12.
+ * Created by harvey on 2018/1/12.
  */
 
 public class FaceScanActivity extends AppCompatActivity

@@ -12,7 +12,7 @@ import com.harvey.arcface.utils.MainHandler;
 import java.util.List;
 
 /**
- * Created by hanhui on 2018/2/7 0007 09:45
+ * Created by harvey on 2018/2/7 0007 09:45
  */
 
 public class DetectFaceAction implements Runnable {

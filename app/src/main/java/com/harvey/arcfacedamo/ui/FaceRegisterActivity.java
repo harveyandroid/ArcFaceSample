@@ -30,7 +30,7 @@ import com.harvey.arcface.view.SurfaceViewSaveFace;
 import java.util.List;
 
 /**
- * Created by hanhui on 2018/1/12.
+ * Created by harvey on 2018/1/12.
  */
 
 public class FaceRegisterActivity extends AppCompatActivity

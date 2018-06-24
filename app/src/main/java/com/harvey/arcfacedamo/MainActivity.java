@@ -12,7 +12,7 @@ import com.harvey.arcfacedamo.ui.FaceScanActivity;
 import com.harvey.db.OwnerDBHelper;
 
 /**
- * Created by hanhui on 2018/6/1 0001 14:43
+ * Created by harvey on 2018/6/1 0001 14:43
  */
 
 public class MainActivity extends AppCompatActivity {

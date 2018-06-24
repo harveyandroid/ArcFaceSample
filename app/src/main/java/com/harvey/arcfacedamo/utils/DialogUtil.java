@@ -6,7 +6,7 @@ import android.content.DialogInterface;
 import android.view.WindowManager;
 
 /**
- * Created by hanhui on 2016/6/27 0027 13:45
+ * Created by harvey on 2016/6/27 0027 13:45
  */
 public class DialogUtil {
 

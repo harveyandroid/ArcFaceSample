@@ -1,7 +1,7 @@
 package com.harvey.arcface;
 
 /**
- * Created by hanhui on 2018/2/6 0006 10:20
+ * Created by harvey on 2018/2/6 0006 10:20
  */
 
 public class ArcFaceConfig {

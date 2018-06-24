@@ -1,7 +1,7 @@
 package com.harvey.db;
 
 /**
- * Created by hanhui on 2017/10/11 0011 14:45
+ * Created by harvey on 2017/10/11 0011 14:45
  */
 
 import android.database.Cursor;

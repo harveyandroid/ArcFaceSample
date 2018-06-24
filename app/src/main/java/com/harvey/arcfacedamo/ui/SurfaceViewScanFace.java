@@ -37,7 +37,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 /**
- * Created by hanhui on 2018/5/2 0002 09:31
+ * Created by harvey on 2018/5/2 0002 09:31
  */
 
 public class SurfaceViewScanFace extends SurfaceView implements SurfaceHolder.Callback {

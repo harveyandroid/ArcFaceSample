@@ -9,7 +9,7 @@ import com.harvey.db.MigrationHelper;
 import org.greenrobot.greendao.database.Database;
 
 /**
- * Created by hanhui on 2017/10/11 0011 14:36
+ * Created by harvey on 2017/10/11 0011 14:36
  */
 
 public class OwnerOpenHelper extends DaoMaster.OpenHelper {

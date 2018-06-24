@@ -13,7 +13,7 @@ import org.greenrobot.greendao.query.QueryBuilder;
 import java.util.List;
 
 /**
- * Created by hanhui on 2017/1/22 0022 16:30
+ * Created by harvey on 2017/1/22 0022 16:30
  */
 public class OwnerDBHelper {
     private final static String TAG = "RobotDBHelper";
