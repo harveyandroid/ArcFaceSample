@@ -27,6 +27,7 @@ public class DetectFaceAction implements Runnable {
     public void destroy() {
         setToStop = true;
         frameBytes = null;
+        faceDetectListener = null;
         isDetectingFace = false;
     }
 
@@ -56,14 +57,15 @@ public class DetectFaceAction implements Runnable {
     void callOnFaceDetect(final List<FaceFindModel> data) {
         if (data.size() > 0)
             Log.d(TAG, "检测人脸数量-->" + data.size());
-        if (faceDetectListener != null) {
-            MainHandler.run(new Runnable() {
-                @Override
-                public void run() {
+        MainHandler.run(new Runnable() {
+            @Override
+            public void run() {
+                if (faceDetectListener != null) {
                     faceDetectListener.onFaceDetect(data, frameBytes);
                 }
-            });
-        }
+            }
+        });
+
     }
 
     public interface OnFaceDetectListener {

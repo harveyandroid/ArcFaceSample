@@ -43,6 +43,7 @@ public class MatchFaceAction implements Runnable {
         setToStop = true;
         faceFindModels.clear();
         frameBytes = null;
+        matchListener = null;
         isMatchingFace = false;
     }
 
@@ -77,14 +78,14 @@ public class MatchFaceAction implements Runnable {
 
     void callOnFaceMatch(final FaceFindMatchModel face) {
         Log.d(TAG, "人脸匹配结果-->" + face.toString());
-        if (matchListener != null && !TextUtils.isEmpty(face.getName())) {
-            MainHandler.run(new Runnable() {
-                @Override
-                public void run() {
+        MainHandler.run(new Runnable() {
+            @Override
+            public void run() {
+                if (matchListener != null && !TextUtils.isEmpty(face.getName())) {
                     matchListener.onFaceMatch(face);
                 }
-            });
-        }
+            }
+        });
     }
 
     public interface OnFaceMatchListener {
