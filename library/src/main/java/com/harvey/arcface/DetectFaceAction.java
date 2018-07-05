@@ -1,8 +1,5 @@
 package com.harvey.arcface;
 
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.Looper;
 import android.support.annotation.MainThread;
 import android.util.Log;
 
@@ -16,77 +13,61 @@ import java.util.List;
  */
 
 public class DetectFaceAction implements Runnable {
-	final String TAG = "DetectFace";
-	Handler mDetectFaceHandler;
-	Looper mDetectFaceLooper;
-	byte[] frameBytes;
-	volatile boolean isDetectingFace = false;// 正在检测人脸
-	volatile boolean isInit = false;
-	int cameraWidth;
-	int cameraHeight;
-	OnFaceDetectListener faceDetectListener;
+    final String TAG = "DetectFace";
+    byte[] frameBytes;
+    volatile boolean setToStop = false;
+    volatile boolean isDetectingFace = false;
+    int cameraWidth;
+    int cameraHeight;
+    OnFaceDetectListener faceDetectListener;
 
-	public void init() {
-		HandlerThread detectFaceThread = new HandlerThread("DetectFace");
-		detectFaceThread.start();
-		mDetectFaceLooper = detectFaceThread.getLooper();
-		mDetectFaceHandler = new Handler(mDetectFaceLooper);
-		isInit = true;
-	}
+    public DetectFaceAction() {
+    }
 
-	public void destroy() {
-		if (isInit) {
-			mDetectFaceLooper.quit();
-		}
-		frameBytes = null;
-		isDetectingFace = false;
-		faceDetectListener = null;
-		isInit = false;
-	}
+    public void destroy() {
+        setToStop = true;
+        frameBytes = null;
+        isDetectingFace = false;
+    }
 
-	public void detectFace(byte[] bytes, int width, int height) {
-		if (!isInit)
-			throw new NullPointerException("没有初始化人脸检测!");
-		if (isDetectingFace)
-			return;
-		this.frameBytes = bytes;
-		this.cameraWidth = width;
-		this.cameraHeight = height;
-		mDetectFaceHandler.post(this);
-	}
+    public void setData(byte[] bytes, int width, int height) {
+        this.frameBytes = bytes;
+        this.cameraWidth = width;
+        this.cameraHeight = height;
+    }
 
-	public void setOnFaceDetectListener(OnFaceDetectListener l) {
-		this.faceDetectListener = l;
-	}
+    public void setOnFaceDetectListener(OnFaceDetectListener l) {
+        this.faceDetectListener = l;
+    }
 
-	@Override
-	public void run() {
-		if (isDetectingFace)
-			return;
-		if (frameBytes == null)
-			return;
-		isDetectingFace = true;
-		final List<FaceFindModel> faceFindModels = ArcFaceEngine.getInstance().detectFace(frameBytes, cameraWidth,
-				cameraHeight);
-		callOnFaceDetect(faceFindModels);
-		isDetectingFace = false;
-	}
+    @Override
+    public void run() {
+        while (!setToStop) {
+            if (frameBytes != null && !isDetectingFace) {
+                isDetectingFace = true;
+                final List<FaceFindModel> faceFindModels = ArcFaceEngine.getInstance().detectFace(frameBytes, cameraWidth,
+                        cameraHeight);
+                callOnFaceDetect(faceFindModels);
+                isDetectingFace = false;
+            }
+        }
+    }
 
-	void callOnFaceDetect(final List<FaceFindModel> data) {
-		if (data.size() > 0)
-			Log.d(TAG, "检测人脸数量-->" + data.size());
-		if (faceDetectListener != null) {
-			MainHandler.run(new Runnable() {
-				@Override
-				public void run() {
-					faceDetectListener.onFaceDetect(data, frameBytes);
-				}
-			});
-		}
-	}
+    void callOnFaceDetect(final List<FaceFindModel> data) {
+        if (data.size() > 0)
+            Log.d(TAG, "检测人脸数量-->" + data.size());
+        if (faceDetectListener != null) {
+            MainHandler.run(new Runnable() {
+                @Override
+                public void run() {
+                    faceDetectListener.onFaceDetect(data, frameBytes);
+                }
+            });
+        }
+    }
 
-	public interface OnFaceDetectListener {
-		@MainThread
-		void onFaceDetect(List<FaceFindModel> faceFindModels, byte[] frameBytes);
-	}
+    public interface OnFaceDetectListener {
+        @MainThread
+        void onFaceDetect(List<FaceFindModel> faceFindModels, byte[] frameBytes);
+    }
 }
