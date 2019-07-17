@@ -14,7 +14,7 @@ android {
 
     sourceSets {
         main {
-            jniLibs.srcDirs = ['libs']
+            jniLibs.srcDirs = ['../libs']
         }
     }
 
@@ -34,7 +34,7 @@ greendao {
 }
 
 dependencies {
-    implementation fileTree( dir: 'libs',include: ['*.jar'])
+    implementation fileTree( dir: '../libs',include: ['*.jar'])
     testImplementation 'junit:junit:4.12'
     implementation "org.greenrobot:greendao:${project.GREENDAO}"
     implementation "com.android.support:appcompat-v7:${project.SUPPORT_VERSION}"
