@@ -10,6 +10,7 @@ android {
         versionName project.VERSION_NAME as String
         versionCode project.VERSION_CODE as int
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
     }
 
     sourceSets {
@@ -34,7 +35,7 @@ greendao {
 }
 
 dependencies {
-    implementation fileTree( dir: '../libs',include: ['*.jar'])
+    implementation fileTree(include: ['*.jar'], dir: '../libs')
     testImplementation 'junit:junit:4.12'
     implementation "org.greenrobot:greendao:${project.GREENDAO}"
     implementation "com.android.support:appcompat-v7:${project.SUPPORT_VERSION}"

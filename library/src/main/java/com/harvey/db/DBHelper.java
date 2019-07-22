@@ -2,11 +2,11 @@ package com.harvey.db;
 
 import android.content.Context;
 
-import com.harvey.db.bean.RegisteredFace;
+import com.harvey.db.bean.FaceRegister;
 import com.harvey.db.dao.DaoMaster;
 import com.harvey.db.dao.DaoSession;
+import com.harvey.db.dao.FaceRegisterDao;
 import com.harvey.db.dao.OwnerOpenHelper;
-import com.harvey.db.dao.RegisteredFaceDao;
 
 import org.greenrobot.greendao.query.QueryBuilder;
 
@@ -15,27 +15,12 @@ import java.util.List;
 /**
  * Created by harvey on 2017/1/22 0022 16:30
  */
-public class OwnerDBHelper {
+public class DBHelper {
     private final static String TAG = "RobotDBHelper";
     public static String DATABASE_NAME = "arc_face.db";
-    private volatile static OwnerDBHelper instance;
     private DaoMaster daoMaster;
     private DaoSession daoSession;
-    private RegisteredFaceDao registeredFaceDao;
-
-    private OwnerDBHelper() {
-    }
-
-    public static OwnerDBHelper getInstance() {
-        if (instance == null) {
-            synchronized (OwnerDBHelper.class) {
-                if (instance == null) {
-                    instance = new OwnerDBHelper();
-                }
-            }
-        }
-        return instance;
-    }
+    private FaceRegisterDao registeredFaceDao;
 
     /**
      * 取得DaoMaster db
@@ -73,9 +58,9 @@ public class OwnerDBHelper {
      * @param context
      * @return
      */
-    public OwnerDBHelper init(Context context) {
+    public DBHelper init(Context context) {
         if (registeredFaceDao == null)
-            registeredFaceDao = getDaoSession(context).getRegisteredFaceDao();
+            registeredFaceDao = getDaoSession(context).getFaceRegisterDao();
         return this;
     }
 
@@ -94,13 +79,13 @@ public class OwnerDBHelper {
      *
      * @param face
      */
-    public void saveRegisteredFace(RegisteredFace face) {
-        QueryBuilder<RegisteredFace> qb = registeredFaceDao.queryBuilder();
-        qb.where(RegisteredFaceDao.Properties.Name.eq(face.getName()));
-        if (qb.list().size() > 0) {
-            RegisteredFace oldFace = qb.list().get(0);
+    public void save(FaceRegister face) {
+        QueryBuilder<FaceRegister> qb = registeredFaceDao.queryBuilder();
+        qb.where(FaceRegisterDao.Properties.Name.eq(face.getName())).limit(1);
+        if (qb.count() > 0) {
+            FaceRegister oldFace = qb.list().get(0);
             face.setId(oldFace.getId());
-            registeredFaceDao.save(face);
+            registeredFaceDao.update(face);
         } else {
             registeredFaceDao.insert(face);
         }
@@ -111,8 +96,7 @@ public class OwnerDBHelper {
      *
      * @return
      */
-    public List<RegisteredFace> getRegisteredFaces() {
-        QueryBuilder<RegisteredFace> qb = registeredFaceDao.queryBuilder();
-        return qb.list();
+    public List<FaceRegister> loadAll() {
+        return registeredFaceDao.loadAll();
     }
 }

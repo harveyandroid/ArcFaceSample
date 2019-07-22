@@ -2,12 +2,13 @@ package com.harvey.arcface.moodel;
 
 import java.io.Serializable;
 
+
 /**
  * Created by harvey on 2018/1/12.
  */
 
 public class FaceFindMatchModel implements Serializable {
-    long student_id;
+    long personId;
     boolean isMatching;
     String name;
     String gender;
@@ -36,12 +37,12 @@ public class FaceFindMatchModel implements Serializable {
         this.gender = gender;
     }
 
-    public long getStudent_id() {
-        return student_id;
+    public long getPersonId() {
+        return personId;
     }
 
-    public void setStudent_id(long student_id) {
-        this.student_id = student_id;
+    public void setPersonId(long personId) {
+        this.personId = personId;
     }
 
     public String getImagePath() {

@@ -8,6 +8,7 @@ import android.graphics.YuvImage;
 import android.media.ExifInterface;
 import android.util.Log;
 
+import com.arcsoft.face.util.ImageUtils;
 import com.harvey.arcface.moodel.FaceFindModel;
 
 import java.io.ByteArrayOutputStream;
@@ -39,21 +40,31 @@ public class FaceUtils {
 
 
     public static void saveFaceImage(String filepath, FaceFindModel faceFindModel, byte[] data) throws IOException {
-        FileOutputStream stream = new FileOutputStream(filepath);
-        ByteArrayOutputStream ops = new ByteArrayOutputStream();
-        YuvImage yuv = new YuvImage(data, ImageFormat.NV21, faceFindModel.getCameraWidth(),
-                faceFindModel.getCameraHeight(), null);
-        yuv.compressToJpeg(faceFindModel.getFaceMoreRect(), 100, ops);
-        byte[] tmp = ops.toByteArray();
-        Bitmap bmp = BitmapFactory.decodeByteArray(tmp, 0, tmp.length);
-        Matrix m = new Matrix();
-        m.setRotate(faceFindModel.getOrientation());
-        bmp = Bitmap.createBitmap(bmp, 0, 0, bmp.getWidth(), bmp.getHeight(), m, true);
-        bmp.compress(Bitmap.CompressFormat.JPEG, 100, stream);
-        stream.flush();
-        ops.close();
-        stream.close();
-        bmp.recycle();
+        FileOutputStream fileOutputStream = null;
+        ByteArrayOutputStream byteArrayOutputStream = null;
+        Bitmap bitmap = null;
+        try {
+            fileOutputStream = new FileOutputStream(filepath);
+            byteArrayOutputStream = new ByteArrayOutputStream();
+            YuvImage yuv = new YuvImage(data, ImageFormat.NV21, faceFindModel.getCameraWidth(),
+                    faceFindModel.getCameraHeight(), null);
+            yuv.compressToJpeg(faceFindModel.getFaceMoreRect(), 100, byteArrayOutputStream);
+            byte[] tmp = byteArrayOutputStream.toByteArray();
+            bitmap = BitmapFactory.decodeByteArray(tmp, 0, tmp.length);
+            bitmap = ImageUtils.rotateBitmap(bitmap, faceFindModel.getOrientation());
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
+            fileOutputStream.flush();
+        } finally {
+            if (fileOutputStream != null) {
+                fileOutputStream.close();
+            }
+            if (byteArrayOutputStream != null) {
+                byteArrayOutputStream.close();
+            }
+            if (bitmap != null) {
+                bitmap.recycle();
+            }
+        }
     }
 
     /**

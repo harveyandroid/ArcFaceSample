@@ -1,164 +1,270 @@
 package com.harvey.arcface.moodel;
 
 import android.graphics.Rect;
-import android.os.Parcel;
-import android.os.Parcelable;
+
+import com.arcsoft.face.FaceFeature;
+import com.arcsoft.face.FaceInfo;
 
 //单个查询人脸信息
-public class FaceFindModel implements Parcelable {
-	public static final Creator<FaceFindModel> CREATOR = new Creator<FaceFindModel>() {
-		@Override
-		public FaceFindModel createFromParcel(Parcel source) {
-			return new FaceFindModel(source);
-		}
+public class FaceFindModel {
+    // 摄像头的尺寸
+    int cameraWidth;
+    int cameraHeight;
+    // 人脸矩形框
+    Rect rect;
+    // 人脸角度
+    int degree;
+    //人脸ID
+    int faceId = -1;
+    //人脸特征
+    byte[] featureData;
 
-		@Override
-		public FaceFindModel[] newArray(int size) {
-			return new FaceFindModel[size];
-		}
-	};
-	// 摄像头的尺寸
-	int cameraWidth;
-	int cameraHeight;
-	// 人脸矩形框
-	Rect faceRect;
-	// 人脸角度
-	int degree;
+    public FaceFindModel(int cameraWidth, int cameraHeight, Rect rect, int degree, int faceId, byte[] featureData) {
+        this.cameraWidth = cameraWidth;
+        this.cameraHeight = cameraHeight;
+        this.rect = rect;
+        this.degree = degree;
+        this.faceId = faceId;
+        this.featureData = featureData;
+    }
 
-	public FaceFindModel() {
-		this.cameraWidth = 0;
-		this.cameraHeight = 0;
-		this.faceRect = new Rect();
-		this.degree = 0;
-	}
+    public FaceFindModel(int cameraWidth, int cameraHeight, FaceInfo faceInfo, FaceFeature faceFeature) {
+        this.cameraWidth = cameraWidth;
+        this.cameraHeight = cameraHeight;
+        this.rect = faceInfo.getRect();
+        this.degree = faceInfo.getOrient();
+        this.faceId = faceInfo.getFaceId();
+        this.featureData = faceFeature.getFeatureData();
+    }
 
-	public FaceFindModel(FaceFindModel self) {
-		this.cameraWidth = self.cameraWidth;
-		this.cameraHeight = self.cameraHeight;
-		this.faceRect = new Rect(self.faceRect);
-		this.degree = self.degree;
-	}
+    public FaceFindModel(FaceFindModel findModel) {
+        this.cameraWidth = findModel.cameraWidth;
+        this.cameraHeight = findModel.cameraHeight;
+        this.rect = new Rect(findModel.rect);
+        this.degree = findModel.degree;
+        this.faceId = findModel.getFaceId();
+        this.featureData = findModel.featureData.clone();
+    }
 
-	protected FaceFindModel(Parcel in) {
-		this.cameraWidth = in.readInt();
-		this.cameraHeight = in.readInt();
-		this.faceRect = in.readParcelable(Rect.class.getClassLoader());
-		this.degree = in.readInt();
-	}
+    public int getCameraWidth() {
+        return cameraWidth;
+    }
 
-	public Rect getFaceRect() {
-		return faceRect;
-	}
+    public void setCameraWidth(int cameraWidth) {
+        this.cameraWidth = cameraWidth;
+    }
 
-	public void setFaceRect(Rect faceRect) {
-		this.faceRect = faceRect;
-	}
+    public int getCameraHeight() {
+        return cameraHeight;
+    }
 
-	// 扩大人脸矩形框范围
-	public Rect getFaceMoreRect() {
-		int more_width = faceRect.width() / 3;
-		int more_height = faceRect.height() / 2;
-		int top = (faceRect.top - more_height) >= 0 ? faceRect.top - more_height : 0;
-		int left = (faceRect.left - more_width) >= 0 ? faceRect.left - more_width : 0;
-		int bottom = (faceRect.bottom + more_height) <= cameraHeight ? faceRect.bottom + more_height : cameraHeight;
-		int right = (faceRect.right + more_width) <= cameraWidth ? faceRect.right + more_width : cameraWidth;
-		return new Rect(left, top, right, bottom);
-	}
+    public void setCameraHeight(int cameraHeight) {
+        this.cameraHeight = cameraHeight;
+    }
 
-	public int getCameraWidth() {
-		return cameraWidth;
-	}
+    public Rect getRect() {
+        return rect;
+    }
 
-	public void setCameraWidth(int cameraWidth) {
-		this.cameraWidth = cameraWidth;
-	}
+    public void setRect(Rect rect) {
+        this.rect = rect;
+    }
 
-	public int getCameraHeight() {
-		return cameraHeight;
-	}
+    public int getDegree() {
+        return degree;
+    }
 
-	public void setCameraHeight(int cameraHeight) {
-		this.cameraHeight = cameraHeight;
-	}
+    public void setDegree(int degree) {
+        this.degree = degree;
+    }
 
-	public int getDegree() {
-		return degree;
-	}
+    public int getFaceId() {
+        return faceId;
+    }
 
-	public void setDegree(int degree) {
-		this.degree = degree;
-	}
+    public void setFaceId(int faceId) {
+        this.faceId = faceId;
+    }
 
-	public int getOrientation() {
-		switch (degree) {
-			case 1 :
-				return 0;
-			case 2 :
-				return 90;
-			case 3 :
-				return 270;
-			case 4 :
-				return 180;
-			case 5 :
-				return 30;
-			case 6 :
-				return 60;
-			case 7 :
-				return 120;
-			case 8 :
-				return 150;
-			case 9 :
-				return 210;
-			case 10 :
-				return 240;
-			case 11 :
-				return 300;
-			case 12 :
-				return 330;
-			default :
-				return 0;
-		}
-	}
+    public byte[] getFeatureData() {
+        return featureData;
+    }
 
-	// 映射
-	// 实际展示 宽高相反
-	public Rect getMappedFaceRect(int mappedWidth, int mappedHeight) {
-		// int left = faceRect.right * mappedWidth / cameraWidth;
-		// int top = faceRect.top * mappedHeight / cameraHeight;
-		// int right = faceRect.left * mappedWidth / cameraWidth;
-		// int bottom = faceRect.bottom * mappedHeight / cameraHeight;
-		// 根据摄像头进行转化(垂直视角)
-		int left = mappedHeight - faceRect.bottom * mappedHeight / cameraHeight;
-		int right = mappedHeight - faceRect.top * mappedHeight / cameraHeight;
-		int top;
-		int bottom;
-		if (getOrientation() == 270) {// 前置
-			top = mappedWidth - faceRect.right * mappedWidth / cameraWidth;
-			bottom = mappedWidth - faceRect.left * mappedWidth / cameraWidth;
-		} else {
-			top = faceRect.right * mappedWidth / cameraWidth;
-			bottom = faceRect.left * mappedWidth / cameraWidth;
-		}
+    public void setFeatureData(byte[] featureData) {
+        this.featureData = featureData;
+    }
 
-		Rect rect = new Rect(left, top, right, bottom);
-		return rect;
-	}
+    public FaceFeature getFaceFeature() {
+        return new FaceFeature(featureData);
+    }
 
-	@Override
-	public int describeContents() {
-		return 0;
-	}
+    public FaceInfo getFaceInfo() {
+        return new FaceInfo(rect, degree);
+    }
 
-	@Override
-	public void writeToParcel(Parcel dest, int flags) {
-		dest.writeInt(this.cameraWidth);
-		dest.writeInt(this.cameraHeight);
-		dest.writeParcelable(this.faceRect, flags);
-		dest.writeInt(this.degree);
-	}
 
-	public FaceFindModel clone() {
-		return new FaceFindModel(this);
-	}
+    /**
+     * 将图像中需要截取的Rect向外扩张一倍，若扩张一倍会溢出，则扩张到边界，若Rect已溢出，则收缩到边界
+     *
+     * @return
+     */
+    public Rect getFaceMoreRect() {
+        //1.原rect边界已溢出宽高的情况
+        int maxOverFlow = 0;
+        int tempOverFlow = 0;
+        if (rect.left < 0) {
+            maxOverFlow = -rect.left;
+        }
+        if (rect.top < 0) {
+            tempOverFlow = -rect.top;
+            if (tempOverFlow > maxOverFlow) {
+                maxOverFlow = tempOverFlow;
+            }
+        }
+        if (rect.right > cameraWidth) {
+            tempOverFlow = rect.right - cameraWidth;
+            if (tempOverFlow > maxOverFlow) {
+                maxOverFlow = tempOverFlow;
+            }
+        }
+        if (rect.bottom > cameraHeight) {
+            tempOverFlow = rect.bottom - cameraHeight;
+            if (tempOverFlow > maxOverFlow) {
+                maxOverFlow = tempOverFlow;
+            }
+        }
+        if (maxOverFlow != 0) {
+            return new Rect(rect.left + maxOverFlow,
+                    rect.top + maxOverFlow,
+                    rect.right - maxOverFlow,
+                    rect.bottom - maxOverFlow);
+        }
+        //2.原rect边界未溢出宽高的情况
+        int padding = rect.height() / 2;
+        //若以此padding扩张rect会溢出，取最大padding为四个边距的最小值
+        if (!(rect.left - padding > 0
+                && rect.right + padding < cameraWidth && rect.top - padding > 0
+                && rect.bottom + padding < cameraHeight)) {
+            padding = Math.min(Math.min(Math.min(rect.left, cameraWidth - rect.right), cameraHeight - rect.bottom), rect.top);
+        }
+        return new Rect(rect.left - padding,
+                rect.top - padding,
+                rect.right + padding,
+                rect.bottom + padding);
+    }
+
+
+    public int getOrientation() {
+        switch (degree) {
+            case 1:
+                return 0;
+            case 2:
+                return 90;
+            case 3:
+                return 270;
+            case 4:
+                return 180;
+            case 5:
+                return 30;
+            case 6:
+                return 60;
+            case 7:
+                return 120;
+            case 8:
+                return 150;
+            case 9:
+                return 210;
+            case 10:
+                return 240;
+            case 11:
+                return 300;
+            case 12:
+                return 330;
+            default:
+                return 0;
+        }
+    }
+
+    /**
+     * 调整人脸框用来绘制
+     *
+     * @param displayOrientation 显示的角度
+     * @param frontCamera        是否前置
+     * @param canvasWidth
+     * @param canvasHeight
+     * @return 调整后的需要被绘制到View上的rect
+     */
+    public Rect adjustRect(int displayOrientation, boolean frontCamera, int canvasWidth, int canvasHeight) {
+        Rect target = new Rect(rect);
+        float horizontalRatio;
+        float verticalRatio;
+        if (displayOrientation % 180 == 0) {
+            horizontalRatio = (float) canvasWidth / (float) cameraWidth;
+            verticalRatio = (float) canvasHeight / (float) cameraHeight;
+        } else {
+            horizontalRatio = (float) canvasHeight / (float) cameraWidth;
+            verticalRatio = (float) canvasWidth / (float) cameraHeight;
+        }
+        target.left *= horizontalRatio;
+        target.right *= horizontalRatio;
+        target.top *= verticalRatio;
+        target.bottom *= verticalRatio;
+
+        Rect newRect = new Rect();
+        switch (displayOrientation) {
+            case 0:
+                if (frontCamera) {
+                    newRect.left = canvasWidth - target.right;
+                    newRect.right = canvasWidth - target.left;
+                } else {
+                    newRect.left = target.left;
+                    newRect.right = target.right;
+                }
+                newRect.top = target.top;
+                newRect.bottom = target.bottom;
+                break;
+            case 90:
+                newRect.right = canvasWidth - target.top;
+                newRect.left = canvasWidth - target.bottom;
+                if (frontCamera) {
+                    newRect.top = canvasHeight - target.right;
+                    newRect.bottom = canvasHeight - target.left;
+                } else {
+                    newRect.top = target.left;
+                    newRect.bottom = target.right;
+                }
+                break;
+            case 180:
+                newRect.top = canvasHeight - target.bottom;
+                newRect.bottom = canvasHeight - target.top;
+                if (frontCamera) {
+                    newRect.left = target.left;
+                    newRect.right = target.right;
+                } else {
+                    newRect.left = canvasWidth - target.right;
+                    newRect.right = canvasWidth - target.left;
+                }
+                break;
+            case 270:
+                newRect.left = target.top;
+                newRect.right = target.bottom;
+                if (frontCamera) {
+                    newRect.top = target.left;
+                    newRect.bottom = target.right;
+                } else {
+                    newRect.top = canvasHeight - target.right;
+                    newRect.bottom = canvasHeight - target.left;
+                }
+                break;
+            default:
+                break;
+        }
+        return newRect;
+    }
+
+
+    public FaceFindModel clone() {
+        return new FaceFindModel(this);
+    }
 
 }

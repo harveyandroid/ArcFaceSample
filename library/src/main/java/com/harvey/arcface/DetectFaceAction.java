@@ -46,7 +46,7 @@ public class DetectFaceAction implements Runnable {
         while (!setToStop) {
             if (frameBytes != null && !isDetectingFace) {
                 isDetectingFace = true;
-                final List<FaceFindModel> faceFindModels = ArcFaceEngine.getInstance().detectFace(frameBytes, cameraWidth,
+                final List<FaceFindModel> faceFindModels = FaceManager.getInstance().extractAllFaceFeature(frameBytes, cameraWidth,
                         cameraHeight);
                 callOnFaceDetect(faceFindModels);
                 isDetectingFace = false;

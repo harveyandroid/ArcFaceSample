@@ -20,11 +20,6 @@ public class OwnerOpenHelper extends DaoMaster.OpenHelper {
 
     /**
      * 数据库升级
-     * <p>
-     * 1-->AnyChatRecordVideo，AnyChatSnapShot，AnyChatTransFile Syllabus表
-     * 2-->Syllabus改字段 3-->Syllabus改字段类型，增加BaseSyllabus表 4-->增加RegisteredFace表
-     * <p>
-     * </p>
      *
      * @param db
      * @param oldVersion
@@ -34,6 +29,6 @@ public class OwnerOpenHelper extends DaoMaster.OpenHelper {
     public void onUpgrade(Database db, int oldVersion, int newVersion) {
         Log.i("greenDAO", "Upgrading schema from version " + oldVersion + " to " + newVersion);
         // 操作数据库的更新 有几个表升级都可以传入到下面
-        MigrationHelper.migrate(db, RegisteredFaceDao.class);
+        MigrationHelper.migrate(db, FaceRegisterDao.class);
     }
 }
