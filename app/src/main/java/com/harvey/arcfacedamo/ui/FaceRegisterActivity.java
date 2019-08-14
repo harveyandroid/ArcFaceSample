@@ -2,31 +2,34 @@ package com.harvey.arcfacedamo.ui;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.RadioGroup;
 
 import com.guo.android_extend.widget.ExtImageView;
-import com.harvey.arcface.ArcFaceEngine;
 import com.harvey.arcface.DetectFaceAction;
-import com.harvey.arcface.utils.ThreadManager;
-import com.harvey.arcfacedamo.R;
+import com.harvey.arcface.FaceManager;
 import com.harvey.arcface.moodel.FaceFindCameraModel;
 import com.harvey.arcface.moodel.FaceFindModel;
 import com.harvey.arcface.utils.FaceUtils;
-import com.harvey.arcfacedamo.utils.ToastUtil;
+import com.harvey.arcface.utils.ThreadManager;
 import com.harvey.arcface.view.SurfaceViewCamera;
 import com.harvey.arcface.view.SurfaceViewSaveFace;
+import com.harvey.arcfacedamo.R;
+import com.harvey.arcfacedamo.utils.ToastUtil;
 
 import java.util.List;
 
@@ -55,6 +58,13 @@ public class FaceRegisterActivity extends AppCompatActivity
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(getContentViewId());
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            WindowManager.LayoutParams attributes = getWindow().getAttributes();
+            attributes.systemUiVisibility = View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+            getWindow().setAttributes(attributes);
+        }
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
         initHolder();
         initListener();
         initData();
@@ -100,6 +110,8 @@ public class FaceRegisterActivity extends AppCompatActivity
             public void onSuccess(FaceFindCameraModel faceModel) {
                 if (faceModel != null && faceModel.getFaceFindModels().size() > 0) {
                     showSaveFaceDialog(faceModel.getFaceFindModels().get(0), faceModel.getCameraData());
+                } else {
+                    surfaceViewSaveFace.reset();
                 }
             }
 
@@ -113,6 +125,8 @@ public class FaceRegisterActivity extends AppCompatActivity
                 Log.e("harvey", "onErrorMsg---->" + errorCode);
             }
         });
+        surfaceViewSaveFace.setDisplayOrientation(surfaceViewCamera.getCameraDisplayOrientation());
+
     }
 
     public void showSaveFaceDialog(final FaceFindModel faceModel, final byte[] data) {
@@ -149,7 +163,7 @@ public class FaceRegisterActivity extends AppCompatActivity
                 } else if (TextUtils.isEmpty(faceSex)) {
                     ToastUtil.showToast(FaceRegisterActivity.this, "请选择性别！");
                 } else {
-                    boolean result = ArcFaceEngine.getInstance().saveFace(data, faceModel, faceName,
+                    boolean result = FaceManager.getInstance().registerNv21(data, faceModel, faceName,
                             Integer.valueOf(faceAge), faceSex, getApplication().getExternalCacheDir().getPath());
                     if (result)
                         ToastUtil.showToast(FaceRegisterActivity.this, "注册人脸成功！");
@@ -167,6 +181,7 @@ public class FaceRegisterActivity extends AppCompatActivity
 
     public void switchCamera(View view) {
         surfaceViewCamera.switchCamera();
+        surfaceViewSaveFace.setFrontCamera(surfaceViewCamera.isFront());
     }
 
     @Override

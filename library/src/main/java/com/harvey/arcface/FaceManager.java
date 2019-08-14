@@ -1,8 +1,9 @@
 package com.harvey.arcface;
 
 import android.content.Context;
-import android.support.v4.util.ArraySet;
 import android.util.Log;
+
+import androidx.collection.ArraySet;
 
 import com.arcsoft.face.AgeInfo;
 import com.arcsoft.face.ErrorInfo;
@@ -104,6 +105,8 @@ public class FaceManager {
 
     public void destroy() {
         faceEngine.unInit();
+        initSuccess = false;
+        registeredFaces.clear();
     }
 
     /**
@@ -115,11 +118,13 @@ public class FaceManager {
      * @return
      */
     public List<FaceInfo> detectFaces(byte[] data, int width, int height) {
+        if (!initSuccess) return null;
         long begin = System.currentTimeMillis();
         List<FaceInfo> result = new ArrayList<>();
         int code = faceEngine.detectFaces(data, width, height, CP_PAF_NV21, result);
         if (code == ErrorInfo.MOK) {
-            Log.i(TAG, "detectFaces time：" + (System.currentTimeMillis() - begin));
+            if (result.size() > 0)
+                Log.i(TAG, String.format("detectFaces %d, time：%d", result.size(), (System.currentTimeMillis() - begin)));
         } else {
             Log.i(TAG, String.format("detectFace fail error code :%d", code));
         }
@@ -128,6 +133,7 @@ public class FaceManager {
 
 
     public List<FaceFindPersonModel> getPersonInfo(byte[] data, int width, int height) {
+        if (!initSuccess) return null;
         List<FaceFindPersonModel> faceFindModels = new ArrayList<>();
         List<FaceInfo> faceResult = new ArrayList<>();
         List<AgeInfo> ageResult = new ArrayList<>();
@@ -185,17 +191,19 @@ public class FaceManager {
      * @return
      */
     public List<FaceFindModel> extractAllFaceFeature(byte[] data, int width, int height) {
+        if (!initSuccess) return null;
         long begin = System.currentTimeMillis();
         List<FaceFindModel> faceFeatureList = new ArrayList<>();
         List<FaceInfo> faceInfoList = detectFaces(data, width, height);
-
-        for (FaceInfo faceInfo : faceInfoList) {
-            FaceFindModel faceFindModel = extractFaceFeature(data, width, height, faceInfo);
-            if (faceFindModel != null) {
-                faceFeatureList.add(faceFindModel);
+        if (faceFeatureList != null && faceInfoList.size() > 0) {
+            for (FaceInfo faceInfo : faceInfoList) {
+                FaceFindModel faceFindModel = extractFaceFeature(data, width, height, faceInfo);
+                if (faceFindModel != null) {
+                    faceFeatureList.add(faceFindModel);
+                }
             }
+            Log.i(TAG, "extractAllFaceFeature time：" + (System.currentTimeMillis() - begin));
         }
-        Log.i(TAG, "extractAllFaceFeature time：" + (System.currentTimeMillis() - begin));
         return faceFeatureList;
     }
 
@@ -209,6 +217,7 @@ public class FaceManager {
      * @return
      */
     public FaceFindModel extractFaceFeature(byte[] data, int width, int height, FaceInfo faceInfo) {
+        if (!initSuccess) return null;
         long begin = System.currentTimeMillis();
         FaceFeature result = new FaceFeature();
         int code = faceEngine.extractFaceFeature(data, width, height, CP_PAF_NV21, faceInfo, result);
@@ -230,6 +239,7 @@ public class FaceManager {
      * @return
      */
     private FaceSimilar compareFaceFeature(FaceFeature feature1, FaceFeature feature2) {
+        if (!initSuccess) return null;
         FaceSimilar result = new FaceSimilar();
         int code = faceEngine.compareFaceFeature(feature1, feature2, result);
         if (code == ErrorInfo.MOK) {
@@ -244,9 +254,15 @@ public class FaceManager {
      * 单张人脸与库中人脸对比
      */
     public FaceFindMatchModel matchFace(byte[] data, int width, int height, FaceInfo faceInfo) {
+        if (!initSuccess) {
+            return null;
+        }
         long begin = System.currentTimeMillis();
         FaceFindModel faceFindModel = extractFaceFeature(data, width, height, faceInfo);
         if (faceFindModel == null) {
+            return null;
+        }
+        if (registeredFaces.size() == 0) {
             return null;
         }
         FaceFindMatchModel findMatchingModel = new FaceFindMatchModel();
@@ -289,8 +305,14 @@ public class FaceManager {
      * @return
      */
     public FaceFindMatchModel matchFace(FaceFeature faceFeature1) {
+        if (!initSuccess) {
+            return null;
+        }
         long begin = System.currentTimeMillis();
         FaceFindMatchModel findMatchingModel = new FaceFindMatchModel();
+        if (registeredFaces.size() == 0) {
+            return null;
+        }
         for (FaceRegister registeredFace : registeredFaces) {
             FaceSimilar similar = compareFaceFeature(faceFeature1, new FaceFeature(registeredFace.getFeatureData()));
             if (similar != null) {
@@ -324,6 +346,7 @@ public class FaceManager {
 
     // 获取人脸特征码并存储人脸图片到本地
     public boolean registerNv21(byte[] nv21, FaceFindModel model, String name, int age, String sex, String dir) {
+        if (!initSuccess) return false;
         try {
             byte[] featureData = model.getFeatureData();
             if (featureData == null || featureData.length != FaceFeature.FEATURE_SIZE) {

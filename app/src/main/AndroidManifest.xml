@@ -19,6 +19,7 @@
         </activity>
         <activity android:name="com.harvey.arcfacedamo.ui.FaceScanActivity"></activity>
         <activity android:name="com.harvey.arcfacedamo.ui.FaceRegisterActivity"></activity>
+        <activity android:name=".ui.TestActivity" />
 
         <meta-data
             android:name="com.harvey.image.CustomCachingGlideModule"

@@ -1,6 +1,6 @@
 package com.harvey.arcface;
 
-import android.support.annotation.MainThread;
+import androidx.annotation.MainThread;
 import android.text.TextUtils;
 import android.util.Log;
 

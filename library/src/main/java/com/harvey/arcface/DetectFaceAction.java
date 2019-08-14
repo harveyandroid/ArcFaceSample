@@ -1,6 +1,6 @@
 package com.harvey.arcface;
 
-import android.support.annotation.MainThread;
+import androidx.annotation.MainThread;
 import android.util.Log;
 
 import com.harvey.arcface.moodel.FaceFindModel;

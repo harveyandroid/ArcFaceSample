@@ -1,5 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'org.greenrobot.greendao'
+apply from: './maven-publish.gradle'
 
 android {
     compileSdkVersion project.COMPILE_SDK_VERSION as int
@@ -9,7 +10,7 @@ android {
         targetSdkVersion project.TARGET_SDK as int
         versionName project.VERSION_NAME as String
         versionCode project.VERSION_CODE as int
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
     }
 
@@ -38,12 +39,8 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: '../libs')
     testImplementation 'junit:junit:4.12'
     implementation "org.greenrobot:greendao:${project.GREENDAO}"
-    implementation "com.android.support:appcompat-v7:${project.SUPPORT_VERSION}"
+    implementation "androidx.collection:collection:1.0.0"
     //解决test 和APP版本不一致问题
-    androidTestImplementation 'com.android.support.test:runner:1.0.2', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    }
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    }
+    androidTestImplementation 'androidx.test:runner:1.1.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'
 }

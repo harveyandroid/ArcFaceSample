@@ -3,7 +3,7 @@ package com.harvey.arcface
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
-import android.support.annotation.MainThread
+import androidx.annotation.MainThread
 import android.text.TextUtils
 import android.util.Log
 import com.harvey.arcface.model.FaceFindMatchModel

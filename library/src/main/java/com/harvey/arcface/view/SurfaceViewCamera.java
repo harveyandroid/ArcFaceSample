@@ -11,6 +11,9 @@ import android.view.SurfaceView;
 import android.view.WindowManager;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -19,7 +22,9 @@ import java.util.List;
 
 public class SurfaceViewCamera extends SurfaceView implements SurfaceHolder.Callback {
 
-    int currentCameraId = Camera.CameraInfo.CAMERA_FACING_FRONT;
+    public int cameraWidth = 1280;
+    public int cameraHeight = 720;
+    int currentCameraId = Camera.CameraInfo.CAMERA_FACING_BACK;
     private SurfaceHolder surfaceHolder;
     private Camera mCamera;
     private Camera.PreviewCallback previewCallback;
@@ -56,16 +61,15 @@ public class SurfaceViewCamera extends SurfaceView implements SurfaceHolder.Call
             mCamera.setPreviewCallback(previewCallback);
             // 参数设定
             Camera.Parameters cameraParams = mCamera.getParameters();
-            for (Camera.Size size : cameraParams.getSupportedPreviewSizes()) {
-                Log.e("SurfaceViewCamera", "SIZE:" + size.width + "x" + size.height);
-            }
-            for (Integer format : cameraParams.getSupportedPreviewFormats()) {
-                Log.e("SurfaceViewCamera", "FORMAT:" + format);
-            }
             cameraParams.setPictureFormat(ImageFormat.JPEG);
             cameraParams.setPreviewFormat(ImageFormat.NV21);
             displayOrientation = getCameraDisplayOrientation();
             mCamera.setDisplayOrientation(displayOrientation);
+            Camera.Size bestPreviewSize = getBestPreviewSize(cameraParams, cameraWidth, cameraHeight);
+            cameraWidth = bestPreviewSize.width;
+            cameraHeight = bestPreviewSize.height;
+            Log.i("SurfaceViewCamera", "设置摄像头分辨率：" + cameraWidth + "*" + cameraHeight);
+            cameraParams.setPreviewSize(cameraWidth, cameraHeight);
             //对焦模式设置
             List<String> supportedFocusModes = cameraParams.getSupportedFocusModes();
             if (supportedFocusModes != null && supportedFocusModes.size() > 0) {
@@ -84,6 +88,33 @@ public class SurfaceViewCamera extends SurfaceView implements SurfaceHolder.Call
             closeCamera();
         }
     }
+
+    /**
+     * 通过传入的宽高算出最接近于宽高值的相机大小
+     */
+    private Camera.Size getBestPreviewSize(Camera.Parameters camPara, final int width, final int height) {
+        List<Camera.Size> allSupportedSize = camPara.getSupportedPreviewSizes();
+        List<Camera.Size> widthLargerSize = new ArrayList<>();
+        for (Camera.Size size : allSupportedSize) {
+            Log.e("SurfaceViewCamera", "SIZE:" + size.width + "x" + size.height);
+            if (size.width > size.height) {
+                widthLargerSize.add(size);
+            }
+        }
+        Collections.sort(widthLargerSize, new Comparator<Camera.Size>() {
+            @Override
+            public int compare(Camera.Size lhs, Camera.Size rhs) {
+                int off_one = Math.abs(lhs.width * lhs.height - width * height);
+                int off_two = Math.abs(rhs.width * rhs.height - width * height);
+                return off_one - off_two;
+            }
+        });
+        for (Integer format : camPara.getSupportedPreviewFormats()) {
+            Log.e("SurfaceViewCamera", "FORMAT:" + format);
+        }
+        return widthLargerSize.get(0);
+    }
+
 
     public void closeCamera() {
         if (null != mCamera) {

@@ -3,8 +3,8 @@ package com.harvey.arcfacedemo.ui
 import android.hardware.Camera
 import android.os.Bundle
 import android.os.Handler
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.LinearLayoutManager
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import android.view.View
 import com.harvey.arcface.DetectFaceAction
 import com.harvey.arcface.MatchFaceAction
@@ -45,7 +45,7 @@ class FaceScanActivity : AppCompatActivity(), Camera.PreviewCallback, DetectFace
     private fun initData() {
         mDetectFaceAction.setOnFaceDetectListener(this)
         matchFaceAction.setOnFaceMatchListener(this)
-        val layoutManager = LinearLayoutManager(this)
+        val layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
         layoutManager.isSmoothScrollbarEnabled = true
         layoutManager.isAutoMeasureEnabled = true
         faceList.layoutManager = layoutManager

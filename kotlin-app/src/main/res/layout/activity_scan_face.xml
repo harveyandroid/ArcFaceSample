@@ -31,7 +31,7 @@
         android:layout_margin="30dp"
         android:src="@drawable/line_right" />
 
-    <android.support.v7.widget.RecyclerView
+    <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/faceList"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"

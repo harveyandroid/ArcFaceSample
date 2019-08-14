@@ -186,7 +186,7 @@ public class FaceFindModel {
     }
 
     /**
-     * 调整人脸框用来绘制
+     * 调整人脸框用来绘制(针对手机)
      *
      * @param displayOrientation 显示的角度
      * @param frontCamera        是否前置
@@ -262,6 +262,22 @@ public class FaceFindModel {
         return newRect;
     }
 
+    /**
+     * 实际展示 宽高相反
+     *
+     * @param mappedWidth
+     * @param mappedHeight
+     * @return
+     */
+    public Rect getMappedFaceRect(int mappedWidth, int mappedHeight) {
+        int left = rect.right * mappedWidth / cameraWidth;
+        int top = rect.top * mappedHeight / cameraHeight;
+        int right = rect.left * mappedWidth / cameraWidth;
+        int bottom = rect.bottom * mappedHeight / cameraHeight;
+
+        Rect rect = new Rect(left, top, right, bottom);
+        return rect;
+    }
 
     public FaceFindModel clone() {
         return new FaceFindModel(this);
