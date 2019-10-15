@@ -403,14 +403,12 @@ public class AIFace {
             orientPriority = FaceConfig.ASF_OP_0_HIGHER_EXT;
             scaleVal = 16;
             maxNum = 25;
-
             combinedMask = FaceConfig.ASF_FACE_DETECT
                     | FaceConfig.ASF_FACE_RECOGNITION
                     | FaceConfig.ASF_AGE
                     | FaceConfig.ASF_GENDER
                     | FaceConfig.ASF_FACE3DANGLE
-                    | FaceConfig.ASF_LIVENESS
-                    | FaceConfig.ASF_IR_LIVENESS;
+                    | FaceConfig.ASF_LIVENESS;
         }
 
         public Builder score(float score) {
@@ -440,6 +438,11 @@ public class AIFace {
 
         public Builder context(Context context) {
             this.context = context;
+            return this;
+        }
+
+        public Builder combinedMask(int combinedMask) {
+            this.combinedMask = combinedMask;
             return this;
         }
 
