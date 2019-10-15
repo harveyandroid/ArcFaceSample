@@ -12,12 +12,6 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    defaultConfig {
-        ndk {
-            abiFilters "armeabi-v7a"
-        }
-    }
-
     buildTypes {
         release {
             minifyEnabled false

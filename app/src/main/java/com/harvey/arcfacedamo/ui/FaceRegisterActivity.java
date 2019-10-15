@@ -7,10 +7,7 @@ import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.os.Build;
 import android.os.Bundle;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,15 +16,15 @@ import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.RadioGroup;
 
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.arcsoft.face.FaceInfo;
 import com.guo.android_extend.widget.ExtImageView;
-import com.harvey.arcface.DetectFaceAction;
-import com.harvey.arcface.FaceManager;
-import com.harvey.arcface.moodel.FaceFindCameraModel;
+import com.harvey.arcface.AIFace;
 import com.harvey.arcface.moodel.FaceFindModel;
 import com.harvey.arcface.utils.FaceUtils;
-import com.harvey.arcface.utils.ThreadManager;
 import com.harvey.arcface.view.SurfaceViewCamera;
-import com.harvey.arcface.view.SurfaceViewSaveFace;
 import com.harvey.arcfacedamo.R;
 import com.harvey.arcfacedamo.utils.ToastUtil;
 
@@ -39,10 +36,8 @@ import java.util.List;
 
 public class FaceRegisterActivity extends AppCompatActivity
         implements
-        Camera.PreviewCallback,
-        DetectFaceAction.OnFaceDetectListener {
-    final DetectFaceAction mDetectFaceAction = new DetectFaceAction();
-    SurfaceViewSaveFace surfaceViewSaveFace;
+        Camera.PreviewCallback {
+    //    SurfaceViewSaveFace surfaceViewSaveFace;
     SurfaceViewCamera surfaceViewCamera;
     View dialogLayout;
     ExtImageView dialogExtImageView;
@@ -53,6 +48,7 @@ public class FaceRegisterActivity extends AppCompatActivity
     String faceAge;
     String faceSex;
     AlertDialog registerDialog;
+    AIFace mAiFace;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -76,7 +72,7 @@ public class FaceRegisterActivity extends AppCompatActivity
 
     protected void initHolder() {
         surfaceViewCamera = findViewById(R.id.surfaceView_Camera);
-        surfaceViewSaveFace = findViewById(R.id.surfaceViewSaveFace);
+//        surfaceViewSaveFace = findViewById(R.id.surfaceViewSaveFace);
         dialogLayout = LayoutInflater.from(this).inflate(R.layout.dialog_save_face, null);
         dialogExtImageView = dialogLayout.findViewById(R.id.extimageview);
         dialogName = dialogLayout.findViewById(R.id.et_name);
@@ -101,31 +97,31 @@ public class FaceRegisterActivity extends AppCompatActivity
     }
 
     protected void initData() {
-        mDetectFaceAction.setOnFaceDetectListener(this);
-        ThreadManager.getCalculator().submit(mDetectFaceAction);
+        mAiFace = new AIFace.Builder().context(this).build();
+        AIFace.showLog(true);
         surfaceViewCamera.setCameraCallBack(this);
-        surfaceViewSaveFace.uploadTimeSecondDown(1);
-        surfaceViewSaveFace.setSaveFaceListener(new SurfaceViewSaveFace.SaveFaceListener() {
-            @Override
-            public void onSuccess(FaceFindCameraModel faceModel) {
-                if (faceModel != null && faceModel.getFaceFindModels().size() > 0) {
-                    showSaveFaceDialog(faceModel.getFaceFindModels().get(0), faceModel.getCameraData());
-                } else {
-                    surfaceViewSaveFace.reset();
-                }
-            }
-
-            @Override
-            public void onTimeSecondDown(int TimeSecond) {
-                Log.e("harvey", "onTimeSecondDown---->" + TimeSecond);
-            }
-
-            @Override
-            public void onErrorMsg(int errorCode) {
-                Log.e("harvey", "onErrorMsg---->" + errorCode);
-            }
-        });
-        surfaceViewSaveFace.setDisplayOrientation(surfaceViewCamera.getCameraDisplayOrientation());
+//        surfaceViewSaveFace.uploadTimeSecondDown(1);
+//        surfaceViewSaveFace.setSaveFaceListener(new SurfaceViewSaveFace.SaveFaceListener() {
+//            @Override
+//            public void onSuccess(FaceFindCameraModel faceModel) {
+//                if (faceModel != null && faceModel.getFaceFindModels().size() > 0) {
+//                    showSaveFaceDialog(faceModel.getFaceFindModels().get(0), faceModel.getCameraData());
+//                } else {
+//                    surfaceViewSaveFace.reset();
+//                }
+//            }
+//
+//            @Override
+//            public void onTimeSecondDown(int TimeSecond) {
+//                Log.e("harvey", "onTimeSecondDown---->" + TimeSecond);
+//            }
+//
+//            @Override
+//            public void onErrorMsg(int errorCode) {
+//                Log.e("harvey", "onErrorMsg---->" + errorCode);
+//            }
+//        });
+//        surfaceViewSaveFace.setDisplayOrientation(surfaceViewCamera.getCameraDisplayOrientation());
 
     }
 
@@ -146,7 +142,7 @@ public class FaceRegisterActivity extends AppCompatActivity
                     public void onClick(DialogInterface dialog, int which) {
                         if (!faceBitmap.isRecycled())
                             faceBitmap.recycle();
-                        surfaceViewSaveFace.reset();
+//                        surfaceViewSaveFace.reset();
                         dialog.dismiss();
                     }
                 }).create();
@@ -163,7 +159,7 @@ public class FaceRegisterActivity extends AppCompatActivity
                 } else if (TextUtils.isEmpty(faceSex)) {
                     ToastUtil.showToast(FaceRegisterActivity.this, "请选择性别！");
                 } else {
-                    boolean result = FaceManager.getInstance().registerNv21(data, faceModel, faceName,
+                    boolean result = mAiFace.registerNv21(data, faceModel, faceName,
                             Integer.valueOf(faceAge), faceSex, getApplication().getExternalCacheDir().getPath());
                     if (result)
                         ToastUtil.showToast(FaceRegisterActivity.this, "注册人脸成功！");
@@ -171,7 +167,7 @@ public class FaceRegisterActivity extends AppCompatActivity
                         ToastUtil.showToast(FaceRegisterActivity.this, "注册人脸失败！");
                     if (!faceBitmap.isRecycled())
                         faceBitmap.recycle();
-                    surfaceViewSaveFace.reset();
+//                    surfaceViewSaveFace.reset();
                     registerDialog.dismiss();
                 }
             }
@@ -181,23 +177,18 @@ public class FaceRegisterActivity extends AppCompatActivity
 
     public void switchCamera(View view) {
         surfaceViewCamera.switchCamera();
-        surfaceViewSaveFace.setFrontCamera(surfaceViewCamera.isFront());
+//        surfaceViewSaveFace.setFrontCamera(surfaceViewCamera.isFront());
     }
 
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
         Camera.Size size = camera.getParameters().getPreviewSize();
-        mDetectFaceAction.setData(data, size.width, size.height);
-    }
-
-    @Override
-    public void onFaceDetect(List<FaceFindModel> faceFindModels, byte[] frameBytes) {
-        surfaceViewSaveFace.uploadFace(faceFindModels, frameBytes);
+        List<FaceInfo> faceInfos = mAiFace.detectFaces(data, size.width, size.height);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mDetectFaceAction.destroy();
+        mAiFace.destroy();
     }
 }

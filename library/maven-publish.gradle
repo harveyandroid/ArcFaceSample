@@ -6,14 +6,14 @@ afterEvaluate { project ->
     uploadArchives {
         repositories {
             mavenDeployer {
-                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+                beforeDeployment { deployment -> signing.signPom(deployment) }
                 repository(url: project.NEXUS_REPOSITORY_URL) {
                     authentication(userName: project.NEXUS_USER_NAME, password: project.NEXUS_PASSWORD)
                 }
                 pom.project {
                     pom.groupId = 'com.avatarcn.base'
                     pom.artifactId = "arcface"
-                    pom.version = "1.0.0"
+                    pom.version = "1.0.2"
                     pom.packaging = 'aar'
                 }
             }
@@ -22,7 +22,7 @@ afterEvaluate { project ->
 
     // 进行数字签名
     signing {
-        required {gradle.taskGraph.hasTask("uploadArchives") }
+        required { gradle.taskGraph.hasTask("uploadArchives") }
         sign configurations.archives
     }
 

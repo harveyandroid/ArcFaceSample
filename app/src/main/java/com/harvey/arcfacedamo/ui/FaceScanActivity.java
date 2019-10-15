@@ -6,18 +6,17 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.view.View;
+import android.view.WindowManager;
+
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import android.view.View;
-import android.view.WindowManager;
 
-import com.harvey.arcface.DetectFaceAction;
-import com.harvey.arcface.MatchFaceAction;
+import com.harvey.arcface.AIFace;
 import com.harvey.arcface.moodel.FaceFindMatchModel;
 import com.harvey.arcface.moodel.FaceFindModel;
-import com.harvey.arcface.utils.ThreadManager;
 import com.harvey.arcface.view.SurfaceViewCamera;
 import com.harvey.arcface.view.SurfaceViewFace;
 import com.harvey.arcfacedamo.R;
@@ -32,12 +31,8 @@ import java.util.concurrent.TimeUnit;
 
 public class FaceScanActivity extends AppCompatActivity
         implements
-        Camera.PreviewCallback,
-        DetectFaceAction.OnFaceDetectListener,
-        MatchFaceAction.OnFaceMatchListener {
+        Camera.PreviewCallback {
     final int FINISH_SHOW_WHAT = 1;
-    final DetectFaceAction mDetectFaceAction = new DetectFaceAction();
-    final MatchFaceAction matchFaceAction = new MatchFaceAction();
     SurfaceViewFace surfaceViewFace;
     SurfaceViewCamera surfaceViewCamera;
     RecyclerView faceList;
@@ -53,6 +48,7 @@ public class FaceScanActivity extends AppCompatActivity
             return false;
         }
     });
+    AIFace mAiFace;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -80,10 +76,7 @@ public class FaceScanActivity extends AppCompatActivity
     }
 
     protected void initData() {
-        mDetectFaceAction.setOnFaceDetectListener(this);
-        matchFaceAction.setOnFaceMatchListener(this);
-        ThreadManager.getCalculator().submit(mDetectFaceAction);
-        ThreadManager.getCalculator().submit(matchFaceAction);
+        mAiFace = new AIFace.Builder().context(this).build();
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setSmoothScrollbarEnabled(true);
         layoutManager.setAutoMeasureEnabled(true);
@@ -104,42 +97,38 @@ public class FaceScanActivity extends AppCompatActivity
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        matchFaceAction.destroy();
-        mDetectFaceAction.destroy();
+        mAiFace.destroy();
         mHandler.removeMessages(FINISH_SHOW_WHAT);
     }
 
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
         Camera.Size size = camera.getParameters().getPreviewSize();
-        mDetectFaceAction.setData(data, size.width, size.height);
-
-    }
-
-    @Override
-    public void onFaceDetect(List<FaceFindModel> faceFindModels, byte[] frameBytes) {
+        List<FaceFindModel> faceFindModels = mAiFace.extractAllFaceFeature(data, size.width, size.height);
         surfaceViewFace.updateFace(faceFindModels);
-        matchFaceAction.matchFace(faceFindModels);
+        if (faceFindModels != null && faceFindModels.size() > 0) {
+            for (FaceFindModel faceFindModel : faceFindModels) {
+                FaceFindMatchModel faceFindMatchModel = mAiFace.matchFace(faceFindModel.getFaceFeature());
+                boolean isExist = false;
+                int existPosition = 0;
+                List<FaceFindMatchModel> models = matchFaceAdapter.getData();
+                for (int i = 0; i < models.size(); i++) {
+                    if (models.get(i).getName().equals(faceFindMatchModel.getName())) {
+                        existPosition = i;
+                        isExist = true;
+                        break;
+                    }
+                }
+                if (!isExist) {
+                    matchFaceAdapter.addData(faceFindMatchModel);
+                } else {
+                    matchFaceAdapter.setData(existPosition, faceFindMatchModel);
+                }
+                mHandler.removeMessages(FINISH_SHOW_WHAT);
+                mHandler.sendEmptyMessageDelayed(FINISH_SHOW_WHAT, TimeUnit.SECONDS.toMillis(5));
+            }
+
+        }
     }
 
-    @Override
-    public void onFaceMatch(FaceFindMatchModel face) {
-        boolean isExist = false;
-        int existPosition = 0;
-        List<FaceFindMatchModel> models = matchFaceAdapter.getData();
-        for (int i = 0; i < models.size(); i++) {
-            if (models.get(i).getName().equals(face.getName())) {
-                existPosition = i;
-                isExist = true;
-                break;
-            }
-        }
-        if (!isExist) {
-            matchFaceAdapter.addData(face);
-        } else {
-            matchFaceAdapter.setData(existPosition, face);
-        }
-        mHandler.removeMessages(FINISH_SHOW_WHAT);
-        mHandler.sendEmptyMessageDelayed(FINISH_SHOW_WHAT, TimeUnit.SECONDS.toMillis(5));
-    }
 }

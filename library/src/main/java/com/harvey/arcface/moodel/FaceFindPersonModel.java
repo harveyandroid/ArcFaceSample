@@ -7,14 +7,25 @@ public class FaceFindPersonModel {
     Rect rect;
     int orient;
     int faceId = -1;
+
     int age;
+    /**
+     * {@link com.arcsoft.face.GenderInfo}
+     */
     int gender;
-    //三维角度
+
+    /**
+     * 三维角度
+     * {@link com.arcsoft.face.Face3DAngle}
+     */
     float yaw;
     float roll;
     float pitch;
     int status;
-    //活体
+    /**
+     * 活体
+     * {@link com.arcsoft.face.LivenessInfo}
+     */
     int liveness;
 
     public Rect getRect() {
@@ -95,5 +106,21 @@ public class FaceFindPersonModel {
 
     public void setLiveness(int liveness) {
         this.liveness = liveness;
+    }
+
+    @Override
+    public String toString() {
+        return "FaceFindPersonModel{" +
+                "rect=" + rect +
+                ", orient=" + orient +
+                ", faceId=" + faceId +
+                ", age=" + age +
+                ", gender=" + gender +
+                ", yaw=" + yaw +
+                ", roll=" + roll +
+                ", pitch=" + pitch +
+                ", status=" + status +
+                ", liveness=" + liveness +
+                '}';
     }
 }

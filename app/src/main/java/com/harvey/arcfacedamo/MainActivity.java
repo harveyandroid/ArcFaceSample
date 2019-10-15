@@ -7,7 +7,6 @@ import android.view.View;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.harvey.arcface.FaceManager;
 import com.harvey.arcfacedamo.ui.FaceRegisterActivity;
 import com.harvey.arcfacedamo.ui.FaceScanActivity;
 import com.harvey.arcfacedamo.ui.TestActivity;
@@ -21,7 +20,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        FaceManager.getInstance().init(this);
     }
 
     public void doFaceScan(View view) {
@@ -39,6 +37,5 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        FaceManager.getInstance().destroy();
     }
 }

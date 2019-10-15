@@ -8,8 +8,8 @@ android {
     defaultConfig {
         minSdkVersion project.MIN_SDK as int
         targetSdkVersion project.TARGET_SDK as int
-        versionName project.VERSION_NAME as String
-        versionCode project.VERSION_CODE as int
+        versionName "1.0.2"
+        versionCode 102
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
     }
@@ -36,11 +36,10 @@ greendao {
 }
 
 dependencies {
-    implementation fileTree(include: ['*.jar'], dir: '../libs')
+    api fileTree(include: ['*.jar'], dir: '../libs')
     testImplementation 'junit:junit:4.12'
     implementation "org.greenrobot:greendao:${project.GREENDAO}"
     implementation "androidx.collection:collection:1.0.0"
-    //解决test 和APP版本不一致问题
     androidTestImplementation 'androidx.test:runner:1.1.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'
 }

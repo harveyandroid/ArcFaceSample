@@ -1,7 +1,6 @@
 package com.harvey.arcface;
 
 import android.content.Context;
-import android.util.Log;
 
 import androidx.collection.ArraySet;
 
@@ -17,6 +16,7 @@ import com.arcsoft.face.LivenessInfo;
 import com.harvey.arcface.moodel.FaceFindMatchModel;
 import com.harvey.arcface.moodel.FaceFindModel;
 import com.harvey.arcface.moodel.FaceFindPersonModel;
+import com.harvey.arcface.template.ILogger;
 import com.harvey.arcface.utils.FaceUtils;
 import com.harvey.db.DBHelper;
 import com.harvey.db.bean.FaceRegister;
@@ -27,86 +27,84 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static com.arcsoft.face.FaceEngine.ASF_AGE;
-import static com.arcsoft.face.FaceEngine.ASF_DETECT_MODE_VIDEO;
-import static com.arcsoft.face.FaceEngine.ASF_FACE3DANGLE;
-import static com.arcsoft.face.FaceEngine.ASF_FACE_DETECT;
-import static com.arcsoft.face.FaceEngine.ASF_FACE_RECOGNITION;
-import static com.arcsoft.face.FaceEngine.ASF_GENDER;
-import static com.arcsoft.face.FaceEngine.ASF_IR_LIVENESS;
-import static com.arcsoft.face.FaceEngine.ASF_LIVENESS;
-import static com.arcsoft.face.FaceEngine.ASF_OP_0_HIGHER_EXT;
-import static com.arcsoft.face.FaceEngine.CP_PAF_NV21;
 
 /**
  * Created by harvey on 2018/1/12.
  */
 
-public class FaceManager {
-
-    public final static String APP_ID = "9yEHo73t5FeUpCEBxnQFRwmDtzADCntG3j5jKosXLPBq";
-    public final static String SDK_KEY = "4DW218FNh9sceSWny9NiHDMkex4oF2ZngTFafMq5EPP9";
-    private static final String TAG = "FaceManager";
-    private static FaceManager instance;
-    private final FaceEngine faceEngine;
-    // 对比置信度
-    private float SCORE = 0.75f;
-    //检测模式
-    private long DEFAULT_Mode = ASF_DETECT_MODE_VIDEO;
+public class AIFace {
+    static ILogger logger = new DefaultLogger();
     //人脸检测角度
-    private int DEFAULT_ORIENT_PRIORITY = ASF_OP_0_HIGHER_EXT;
-    //识别的最小人脸比例
-    private int DEFAULT_SCALE_VAL = 16;
-    //引擎最多能检测出的人脸数
-    private int DEFAULT_MAX_NUM = 25;
-    //需要启用的功能组合
-    private int DEFAULT_COMBINED_MASK = ASF_FACE_DETECT
-            | ASF_FACE_RECOGNITION
-            | ASF_AGE
-            | ASF_GENDER
-            | ASF_FACE3DANGLE
-            | ASF_LIVENESS
-            | ASF_IR_LIVENESS;
+    int orientPriority;
+    private FaceEngine faceEngine;
     private Set<FaceRegister> registeredFaces;
     private DBHelper dbHelper = new DBHelper();
-    private boolean initSuccess = false;
+    private volatile boolean initSuccess = false;
+    // 对比置信度
+    private float score;
+    //检测模式
+    private long mode;
+    //识别的最小人脸比例
+    private int scaleVal;
+    //引擎最多能检测出的人脸数
+    private int maxNum;
+    //需要启用的功能组合
+    private int combinedMask;
+    private Context mContext;
 
-    private FaceManager() {
+    private AIFace(Builder builder) {
+        score = builder.score;
+        mode = builder.mode;
+        orientPriority = builder.orientPriority;
+        scaleVal = builder.scaleVal;
+        maxNum = builder.maxNum;
+        combinedMask = builder.combinedMask;
+        mContext = builder.context;
         faceEngine = new FaceEngine();
         registeredFaces = new ArraySet<>();
+        init();
     }
 
-    public static FaceManager getInstance() {
-        if (instance == null)
-            instance = new FaceManager();
-        return instance;
+    public static void showLog(boolean isShowLog) {
+        logger.showLog(isShowLog);
     }
 
-    public void init(Context context) {
+    public static void showStackTrace(boolean isShowStackTrace) {
+        logger.showStackTrace(isShowStackTrace);
+    }
+
+    public synchronized boolean isInit() {
+        return initSuccess;
+    }
+
+    public synchronized boolean init() {
+        if (initSuccess) return true;
         long begin = System.currentTimeMillis();
         initSuccess = false;
-        int code = faceEngine.activeOnline(context, APP_ID, SDK_KEY);
+        int code = faceEngine.activeOnline(mContext, FaceConfig.APP_ID, FaceConfig.SDK_KEY);
         if (code != ErrorInfo.MOK && code != ErrorInfo.MERR_ASF_ALREADY_ACTIVATED) {
-            Log.i(TAG, String.format("activeOnline fail error_code:%d", code));
-            return;
+            logger.i(String.format("activeOnline fail error_code:%d", code));
+            return false;
         }
-
-        code = faceEngine.init(context, DEFAULT_Mode, DEFAULT_ORIENT_PRIORITY, DEFAULT_SCALE_VAL, DEFAULT_MAX_NUM, DEFAULT_COMBINED_MASK);
+        code = faceEngine.init(mContext, mode, orientPriority, scaleVal, maxNum, combinedMask);
         if (code != ErrorInfo.MOK) {
-            Log.i(TAG, String.format("init fail error_code:%d", code));
-            return;
+            logger.i(String.format("init fail error_code:%d", code));
+            return false;
         }
-        dbHelper.init(context);
+        dbHelper.init(mContext);
         registeredFaces = new ArraySet<>(dbHelper.loadAll());
         initSuccess = true;
-        Log.i(TAG, "init time：" + (System.currentTimeMillis() - begin));
-
+        logger.i("init time：" + (System.currentTimeMillis() - begin));
+        return true;
     }
 
-    public void destroy() {
-        faceEngine.unInit();
+
+    public synchronized void destroy() {
         initSuccess = false;
+        faceEngine.unInit();
+        faceEngine = null;
         registeredFaces.clear();
+
     }
 
     /**
@@ -121,38 +119,44 @@ public class FaceManager {
         if (!initSuccess) return null;
         long begin = System.currentTimeMillis();
         List<FaceInfo> result = new ArrayList<>();
-        int code = faceEngine.detectFaces(data, width, height, CP_PAF_NV21, result);
+        int code = faceEngine.detectFaces(data, width, height, FaceConfig.CP_PAF_NV21, result);
         if (code == ErrorInfo.MOK) {
             if (result.size() > 0)
-                Log.i(TAG, String.format("detectFaces %d, time：%d", result.size(), (System.currentTimeMillis() - begin)));
+                logger.i(String.format("detectFaces %d, time：%d", result.size(), (System.currentTimeMillis() - begin)));
         } else {
-            Log.i(TAG, String.format("detectFace fail error code :%d", code));
+            logger.i(String.format("detectFace fail error code :%d", code));
         }
         return result;
     }
 
-
-    public List<FaceFindPersonModel> getPersonInfo(byte[] data, int width, int height) {
-        if (!initSuccess) return null;
-        List<FaceFindPersonModel> faceFindModels = new ArrayList<>();
-        List<FaceInfo> faceResult = new ArrayList<>();
-        List<AgeInfo> ageResult = new ArrayList<>();
-        List<Face3DAngle> face3DAngleResult = new ArrayList<>();
-        List<GenderInfo> genderInfoResult = new ArrayList<>();
-        List<LivenessInfo> livenessInfoResult = new ArrayList<>();
-        int code = faceEngine.process(data, width, height, CP_PAF_NV21, faceResult,
-                ASF_AGE
-                        | ASF_GENDER
-                        | ASF_FACE3DANGLE
-                        | ASF_LIVENESS);
+    public List<FaceFindPersonModel> detectPersons(byte[] data, int width, int height) {
+        if (!initSuccess) {
+            return null;
+        }
+        List<FaceInfo> faceResult = detectFaces(data, width, height);
+        if (faceResult == null || faceResult.size() == 0) {
+            return null;
+        }
+        int code = faceEngine.process(data, width, height, FaceConfig.CP_PAF_NV21, faceResult,
+                FaceConfig.ASF_AGE
+                        | FaceConfig.ASF_GENDER
+                        | FaceConfig.ASF_FACE3DANGLE
+                        | FaceConfig.ASF_LIVENESS);
         int faceSize = faceResult.size();
+        logger.i("getPersonInfo faceSize：" + faceSize);
         if (code == ErrorInfo.MOK && faceSize > 0) {
+            List<FaceFindPersonModel> faceFindModels = new ArrayList<>();
+            List<AgeInfo> ageResult = new ArrayList<>();
+            List<Face3DAngle> face3DAngleResult = new ArrayList<>();
+            List<GenderInfo> genderInfoResult = new ArrayList<>();
+            List<LivenessInfo> livenessInfoResult = new ArrayList<>();
+
             int ageCode = faceEngine.getAge(ageResult);
             int face3DAngleCode = faceEngine.getFace3DAngle(face3DAngleResult);
             int genderCode = faceEngine.getGender(genderInfoResult);
             int livenessCode = faceEngine.getLiveness(livenessInfoResult);
             if ((ageCode | genderCode | face3DAngleCode | livenessCode) != ErrorInfo.MOK) {
-                Log.i(TAG, String.format("at lease one of age、gender、face3DAngle 、liveness detect failed! codes are:%d,%d,%d,%d "
+                logger.i(String.format("at lease one of age、gender、face3DAngle 、liveness detect failed! codes are:%d,%d,%d,%d "
                         , ageCode, face3DAngleCode, genderCode, livenessCode));
             } else {
                 for (int i = 0; i < faceSize; i++) {
@@ -176,10 +180,11 @@ public class FaceManager {
                     faceFindModels.add(personModel);
                 }
             }
+            return faceFindModels;
         } else {
-            Log.i(TAG, String.format("process fail error code :%d", code));
+            logger.i(String.format("process fail error code :%d", code));
         }
-        return faceFindModels;
+        return null;
     }
 
     /**
@@ -193,18 +198,19 @@ public class FaceManager {
     public List<FaceFindModel> extractAllFaceFeature(byte[] data, int width, int height) {
         if (!initSuccess) return null;
         long begin = System.currentTimeMillis();
-        List<FaceFindModel> faceFeatureList = new ArrayList<>();
         List<FaceInfo> faceInfoList = detectFaces(data, width, height);
-        if (faceFeatureList != null && faceInfoList.size() > 0) {
+        if (faceInfoList != null && faceInfoList.size() > 0) {
+            List<FaceFindModel> faceFeatureList = new ArrayList<>();
             for (FaceInfo faceInfo : faceInfoList) {
                 FaceFindModel faceFindModel = extractFaceFeature(data, width, height, faceInfo);
                 if (faceFindModel != null) {
                     faceFeatureList.add(faceFindModel);
                 }
             }
-            Log.i(TAG, "extractAllFaceFeature time：" + (System.currentTimeMillis() - begin));
+            logger.i("extractAllFaceFeature time：" + (System.currentTimeMillis() - begin));
+            return faceFeatureList;
         }
-        return faceFeatureList;
+        return null;
     }
 
     /**
@@ -220,16 +226,15 @@ public class FaceManager {
         if (!initSuccess) return null;
         long begin = System.currentTimeMillis();
         FaceFeature result = new FaceFeature();
-        int code = faceEngine.extractFaceFeature(data, width, height, CP_PAF_NV21, faceInfo, result);
+        int code = faceEngine.extractFaceFeature(data, width, height, FaceConfig.CP_PAF_NV21, faceInfo, result);
         if (code == ErrorInfo.MOK) {
-            Log.i(TAG, "extractFaceFeature time：" + (System.currentTimeMillis() - begin));
+            logger.i("extractFaceFeature time：" + (System.currentTimeMillis() - begin));
             return new FaceFindModel(width, height, faceInfo, result);
         } else {
-            Log.i(TAG, String.format("extractFaceFeature fail error code :%d", code));
+            logger.i(String.format("extractFaceFeature fail error code :%d", code));
             return null;
         }
     }
-
 
     /**
      * 比对人脸特征数据获取相似度
@@ -245,7 +250,7 @@ public class FaceManager {
         if (code == ErrorInfo.MOK) {
             return result;
         } else {
-            Log.i(TAG, String.format("compareFaceFeature fail error code :%d", code));
+            logger.i(String.format("compareFaceFeature fail error code :%d", code));
             return null;
         }
     }
@@ -269,8 +274,8 @@ public class FaceManager {
         for (FaceRegister registeredFace : registeredFaces) {
             FaceSimilar similar = compareFaceFeature(faceFindModel.getFaceFeature(), new FaceFeature(registeredFace.getFeatureData()));
             if (similar != null) {
-                Log.e(TAG, "对比分数：" + similar.getScore());
-                if (similar.getScore() > SCORE) {
+                logger.e("对比分数：" + similar.getScore());
+                if (similar.getScore() > score) {
                     // 没有对比成功的记录
                     if (!findMatchingModel.isMatching()) {
                         findMatchingModel.setMatching(true);
@@ -293,10 +298,9 @@ public class FaceManager {
                 }
             }
         }
-        Log.i(TAG, "人脸对比耗费时间：" + (System.currentTimeMillis() - begin));
+        logger.i("人脸对比耗费时间：" + (System.currentTimeMillis() - begin));
         return findMatchingModel;
     }
-
 
     /**
      * 单张人脸与库中人脸对比
@@ -316,8 +320,8 @@ public class FaceManager {
         for (FaceRegister registeredFace : registeredFaces) {
             FaceSimilar similar = compareFaceFeature(faceFeature1, new FaceFeature(registeredFace.getFeatureData()));
             if (similar != null) {
-                Log.e(TAG, "对比分数：" + similar.getScore());
-                if (similar.getScore() > SCORE) {
+                logger.e("对比分数：" + similar.getScore());
+                if (similar.getScore() > score) {
                     // 没有对比成功的记录
                     if (!findMatchingModel.isMatching()) {
                         findMatchingModel.setMatching(true);
@@ -340,7 +344,7 @@ public class FaceManager {
                 }
             }
         }
-        Log.e(TAG, "人脸对比耗费时间：" + (System.currentTimeMillis() - begin));
+        logger.e("人脸对比耗费时间：" + (System.currentTimeMillis() - begin));
         return findMatchingModel;
     }
 
@@ -367,7 +371,7 @@ public class FaceManager {
             registeredFace.setName(name);
             registeredFace.setImagePath(imgFile);
             registeredFace.setFaceTime(System.currentTimeMillis());
-            Log.d(TAG, "人脸信息保存到本地数据库：" + registeredFace.toString());
+            logger.d("人脸信息保存到本地数据库：" + registeredFace.toString());
             dbHelper.save(registeredFace);
             registeredFaces.remove(registeredFace);
             registeredFaces.add(registeredFace);
@@ -378,5 +382,70 @@ public class FaceManager {
         return false;
     }
 
+    public static final class Builder {
+        // 对比置信度
+        float score;
+        //检测模式
+        long mode;
+        //人脸检测角度
+        int orientPriority;
+        //识别的最小人脸比例
+        int scaleVal;
+        //引擎最多能检测出的人脸数
+        int maxNum;
+        Context context;
+        //需要启用的功能组合
+        int combinedMask;
+
+        public Builder() {
+            score = 0.75f;
+            mode = FaceConfig.ASF_DETECT_MODE_VIDEO;
+            orientPriority = FaceConfig.ASF_OP_0_HIGHER_EXT;
+            scaleVal = 16;
+            maxNum = 25;
+
+            combinedMask = FaceConfig.ASF_FACE_DETECT
+                    | FaceConfig.ASF_FACE_RECOGNITION
+                    | FaceConfig.ASF_AGE
+                    | FaceConfig.ASF_GENDER
+                    | FaceConfig.ASF_FACE3DANGLE
+                    | FaceConfig.ASF_LIVENESS
+                    | FaceConfig.ASF_IR_LIVENESS;
+        }
+
+        public Builder score(float score) {
+            this.score = score;
+            return this;
+        }
+
+        public Builder mode(long mode) {
+            this.mode = mode;
+            return this;
+        }
+
+        public Builder orientPriority(int orientPriority) {
+            this.orientPriority = orientPriority;
+            return this;
+        }
+
+        public Builder scaleVal(int scaleVal) {
+            this.scaleVal = scaleVal;
+            return this;
+        }
+
+        public Builder maxNum(int maxNum) {
+            this.maxNum = maxNum;
+            return this;
+        }
+
+        public Builder context(Context context) {
+            this.context = context;
+            return this;
+        }
+
+        public AIFace build() {
+            return new AIFace(this);
+        }
+    }
 
 }
