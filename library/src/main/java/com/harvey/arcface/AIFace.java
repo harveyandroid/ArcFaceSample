@@ -110,16 +110,16 @@ public class AIFace {
     /**
      * 获取摄像头人脸识别结果
      *
-     * @param data
+     * @param nv21
      * @param width
      * @param height
      * @return
      */
-    public List<FaceInfo> detectFaces(byte[] data, int width, int height) {
+    public List<FaceInfo> detectFaces(byte[] nv21, int width, int height) {
         if (!initSuccess) return null;
         long begin = System.currentTimeMillis();
         List<FaceInfo> result = new ArrayList<>();
-        int code = faceEngine.detectFaces(data, width, height, FaceConfig.CP_PAF_NV21, result);
+        int code = faceEngine.detectFaces(nv21, width, height, FaceConfig.CP_PAF_NV21, result);
         if (code == ErrorInfo.MOK) {
             if (result.size() > 0)
                 logger.i(String.format("detectFaces %d, time：%d", result.size(), (System.currentTimeMillis() - begin)));
@@ -129,15 +129,15 @@ public class AIFace {
         return result;
     }
 
-    public List<FaceFindPersonModel> detectPersons(byte[] data, int width, int height) {
+    public List<FaceFindPersonModel> detectPersons(byte[] nv21, int width, int height) {
         if (!initSuccess) {
             return null;
         }
-        List<FaceInfo> faceResult = detectFaces(data, width, height);
+        List<FaceInfo> faceResult = detectFaces(nv21, width, height);
         if (faceResult == null || faceResult.size() == 0) {
             return null;
         }
-        int code = faceEngine.process(data, width, height, FaceConfig.CP_PAF_NV21, faceResult,
+        int code = faceEngine.process(nv21, width, height, FaceConfig.CP_PAF_NV21, faceResult,
                 FaceConfig.ASF_AGE
                         | FaceConfig.ASF_GENDER
                         | FaceConfig.ASF_FACE3DANGLE
@@ -190,19 +190,19 @@ public class AIFace {
     /**
      * 提取摄像头所有人脸特征数据
      *
-     * @param data
+     * @param nv21
      * @param width
      * @param height
      * @return
      */
-    public List<FaceFindModel> extractAllFaceFeature(byte[] data, int width, int height) {
+    public List<FaceFindModel> extractAllFaceFeature(byte[] nv21, int width, int height) {
         if (!initSuccess) return null;
         long begin = System.currentTimeMillis();
-        List<FaceInfo> faceInfoList = detectFaces(data, width, height);
+        List<FaceInfo> faceInfoList = detectFaces(nv21, width, height);
         if (faceInfoList != null && faceInfoList.size() > 0) {
             List<FaceFindModel> faceFeatureList = new ArrayList<>();
             for (FaceInfo faceInfo : faceInfoList) {
-                FaceFindModel faceFindModel = extractFaceFeature(data, width, height, faceInfo);
+                FaceFindModel faceFindModel = extractFaceFeature(nv21, width, height, faceInfo);
                 if (faceFindModel != null) {
                     faceFeatureList.add(faceFindModel);
                 }
@@ -216,17 +216,17 @@ public class AIFace {
     /**
      * 提取人脸特征数据
      *
-     * @param data
+     * @param nv21
      * @param width
      * @param height
      * @param faceInfo
      * @return
      */
-    public FaceFindModel extractFaceFeature(byte[] data, int width, int height, FaceInfo faceInfo) {
+    public FaceFindModel extractFaceFeature(byte[] nv21, int width, int height, FaceInfo faceInfo) {
         if (!initSuccess) return null;
         long begin = System.currentTimeMillis();
         FaceFeature result = new FaceFeature();
-        int code = faceEngine.extractFaceFeature(data, width, height, FaceConfig.CP_PAF_NV21, faceInfo, result);
+        int code = faceEngine.extractFaceFeature(nv21, width, height, FaceConfig.CP_PAF_NV21, faceInfo, result);
         if (code == ErrorInfo.MOK) {
             logger.i("extractFaceFeature time：" + (System.currentTimeMillis() - begin));
             return new FaceFindModel(width, height, faceInfo, result);
@@ -382,6 +382,36 @@ public class AIFace {
         return false;
     }
 
+    public enum Action {
+        DETECT(FaceConfig.ASF_FACE_DETECT),
+
+        DEEP_DETECT(FaceConfig.ASF_FACE_DETECT
+                | FaceConfig.ASF_AGE
+                | FaceConfig.ASF_GENDER
+                | FaceConfig.ASF_FACE3DANGLE
+                | FaceConfig.ASF_LIVENESS),
+
+        FEATURE_EXTRACT(FaceConfig.ASF_FACE_DETECT
+                | FaceConfig.ASF_FACE_RECOGNITION),
+
+        MATCH(FaceConfig.ASF_FACE_DETECT
+                | FaceConfig.ASF_FACE_RECOGNITION),
+
+        DETECT_AND_MATCH(FaceConfig.ASF_FACE_DETECT
+                | FaceConfig.ASF_FACE_RECOGNITION
+                | FaceConfig.ASF_AGE
+                | FaceConfig.ASF_GENDER
+                | FaceConfig.ASF_FACE3DANGLE
+                | FaceConfig.ASF_LIVENESS);
+
+        //需要启用的功能组合
+        int combinedMask;
+
+        Action(int mask) {
+            this.combinedMask = mask;
+        }
+    }
+
     public static final class Builder {
         // 对比置信度
         float score;
@@ -403,12 +433,7 @@ public class AIFace {
             orientPriority = FaceConfig.ASF_OP_0_HIGHER_EXT;
             scaleVal = 16;
             maxNum = 25;
-            combinedMask = FaceConfig.ASF_FACE_DETECT
-                    | FaceConfig.ASF_FACE_RECOGNITION
-                    | FaceConfig.ASF_AGE
-                    | FaceConfig.ASF_GENDER
-                    | FaceConfig.ASF_FACE3DANGLE
-                    | FaceConfig.ASF_LIVENESS;
+            combinedMask = FaceConfig.ASF_FACE_DETECT;
         }
 
         public Builder score(float score) {
@@ -446,9 +471,15 @@ public class AIFace {
             return this;
         }
 
+        public Builder combinedMask(Action action) {
+            this.combinedMask = action.combinedMask;
+            return this;
+        }
+
         public AIFace build() {
             return new AIFace(this);
         }
+
     }
 
 }
