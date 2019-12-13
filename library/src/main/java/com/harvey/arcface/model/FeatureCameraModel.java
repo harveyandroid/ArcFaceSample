@@ -14,6 +14,11 @@ public class FeatureCameraModel extends CameraModel {
         this.featureModels = data;
     }
 
+    public FeatureCameraModel(List<FeatureModel> data, CameraModel cameraModel) {
+        super(cameraModel);
+        this.featureModels = data;
+    }
+
     public FeatureCameraModel(FeatureCameraModel model) {
         super(model);
         this.featureModels = new ArrayList<>();

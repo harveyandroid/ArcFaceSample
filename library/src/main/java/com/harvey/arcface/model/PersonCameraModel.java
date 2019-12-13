@@ -14,6 +14,11 @@ public class PersonCameraModel extends CameraModel {
         this.personModels = data;
     }
 
+    public PersonCameraModel(List<PersonModel> data, CameraModel model) {
+        super(model);
+        this.personModels = data;
+    }
+
     public PersonCameraModel(PersonCameraModel model) {
         super(model);
         this.personModels = new ArrayList<>();
