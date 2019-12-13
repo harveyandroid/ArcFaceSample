@@ -1,12 +1,12 @@
-package com.harvey.db;
+package com.harvey.arcfacedamo.db;
 
 import android.content.Context;
 
-import com.harvey.db.bean.FaceRegister;
-import com.harvey.db.dao.DaoMaster;
-import com.harvey.db.dao.DaoSession;
-import com.harvey.db.dao.FaceRegisterDao;
-import com.harvey.db.dao.OwnerOpenHelper;
+import com.harvey.arcfacedamo.db.bean.FaceRegister;
+import com.harvey.arcfacedamo.db.dao.DaoMaster;
+import com.harvey.arcfacedamo.db.dao.DaoSession;
+import com.harvey.arcfacedamo.db.dao.FaceRegisterDao;
+import com.harvey.arcfacedamo.db.dao.OwnerOpenHelper;
 
 import org.greenrobot.greendao.query.QueryBuilder;
 
@@ -22,35 +22,15 @@ public class DBHelper {
     private DaoSession daoSession;
     private FaceRegisterDao registeredFaceDao;
 
-    /**
-     * 取得DaoMaster db
-     *
-     * @param context
-     * @return
-     */
-    public DaoMaster getDaoMaster(Context context) {
+
+    public DBHelper(Context context) {
         if (daoMaster == null) {
             OwnerOpenHelper helper = new OwnerOpenHelper(context.getApplicationContext(), DATABASE_NAME, null);
             daoMaster = new DaoMaster(helper.getWritableDatabase());
         }
-        return daoMaster;
+        daoSession = daoMaster.newSession();
     }
 
-    /**
-     * 取得DaoSession
-     *
-     * @param context
-     * @return
-     */
-    public DaoSession getDaoSession(Context context) {
-        if (daoSession == null) {
-            if (daoMaster == null) {
-                daoMaster = getDaoMaster(context);
-            }
-            daoSession = daoMaster.newSession();
-        }
-        return daoSession;
-    }
 
     /**
      * 需要全局初始化
@@ -60,7 +40,7 @@ public class DBHelper {
      */
     public DBHelper init(Context context) {
         if (registeredFaceDao == null)
-            registeredFaceDao = getDaoSession(context).getFaceRegisterDao();
+            registeredFaceDao = daoSession.getFaceRegisterDao();
         return this;
     }
 

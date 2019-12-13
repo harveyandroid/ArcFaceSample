@@ -1,10 +1,10 @@
-package com.harvey.db.dao;
+package com.harvey.arcfacedamo.db.dao;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
-import com.harvey.db.MigrationHelper;
+import com.harvey.arcfacedamo.db.MigrationHelper;
 
 import org.greenrobot.greendao.database.Database;
 

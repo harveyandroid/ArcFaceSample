@@ -1,8 +1,8 @@
-package com.harvey.arcface;
+package com.harvey.arcface.utils;
 
 import android.util.Log;
 
-import com.harvey.arcface.template.ILogger;
+import com.harvey.arcface.utils.ILogger;
 
 
 /**

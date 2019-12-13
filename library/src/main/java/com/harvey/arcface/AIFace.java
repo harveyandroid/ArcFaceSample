@@ -2,8 +2,6 @@ package com.harvey.arcface;
 
 import android.content.Context;
 
-import androidx.collection.ArraySet;
-
 import com.arcsoft.face.AgeInfo;
 import com.arcsoft.face.ErrorInfo;
 import com.arcsoft.face.Face3DAngle;
@@ -13,19 +11,18 @@ import com.arcsoft.face.FaceInfo;
 import com.arcsoft.face.FaceSimilar;
 import com.arcsoft.face.GenderInfo;
 import com.arcsoft.face.LivenessInfo;
-import com.harvey.arcface.moodel.FaceFindMatchModel;
-import com.harvey.arcface.moodel.FaceFindModel;
-import com.harvey.arcface.moodel.FaceFindPersonModel;
-import com.harvey.arcface.template.ILogger;
-import com.harvey.arcface.utils.FaceUtils;
-import com.harvey.db.DBHelper;
-import com.harvey.db.bean.FaceRegister;
+import com.harvey.arcface.model.FaceAction;
+import com.harvey.arcface.model.FaceCameraModel;
+import com.harvey.arcface.model.FeatureCameraModel;
+import com.harvey.arcface.model.FeatureModel;
+import com.harvey.arcface.model.PersonCameraModel;
+import com.harvey.arcface.model.PersonModel;
+import com.harvey.arcface.utils.DefaultLogger;
+import com.harvey.arcface.utils.FaceConfig;
+import com.harvey.arcface.utils.ILogger;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 
 /**
@@ -37,11 +34,7 @@ public class AIFace {
     //人脸检测角度
     int orientPriority;
     private FaceEngine faceEngine;
-    private Set<FaceRegister> registeredFaces;
-    private DBHelper dbHelper = new DBHelper();
     private volatile boolean initSuccess = false;
-    // 对比置信度
-    private float score;
     //检测模式
     private long mode;
     //识别的最小人脸比例
@@ -53,7 +46,6 @@ public class AIFace {
     private Context mContext;
 
     private AIFace(Builder builder) {
-        score = builder.score;
         mode = builder.mode;
         orientPriority = builder.orientPriority;
         scaleVal = builder.scaleVal;
@@ -61,7 +53,6 @@ public class AIFace {
         combinedMask = builder.combinedMask;
         mContext = builder.context;
         faceEngine = new FaceEngine();
-        registeredFaces = new ArraySet<>();
         init();
     }
 
@@ -71,10 +62,6 @@ public class AIFace {
 
     public static void showStackTrace(boolean isShowStackTrace) {
         logger.showStackTrace(isShowStackTrace);
-    }
-
-    public synchronized boolean isInit() {
-        return initSuccess;
     }
 
     public synchronized boolean init() {
@@ -91,21 +78,21 @@ public class AIFace {
             logger.i(String.format("init fail error_code:%d", code));
             return false;
         }
-        dbHelper.init(mContext);
-        registeredFaces = new ArraySet<>(dbHelper.loadAll());
         initSuccess = true;
         logger.i("init time：" + (System.currentTimeMillis() - begin));
         return true;
     }
 
+    public synchronized boolean isInit() {
+        return initSuccess;
+    }
 
     public synchronized void destroy() {
         initSuccess = false;
         faceEngine.unInit();
         faceEngine = null;
-        registeredFaces.clear();
-
     }
+
 
     /**
      * 获取摄像头人脸识别结果
@@ -116,25 +103,48 @@ public class AIFace {
      * @return
      */
     public List<FaceInfo> detectFaces(byte[] nv21, int width, int height) {
-        if (!initSuccess) return null;
+        if (!isInit()) return null;
         long begin = System.currentTimeMillis();
         List<FaceInfo> result = new ArrayList<>();
         int code = faceEngine.detectFaces(nv21, width, height, FaceConfig.CP_PAF_NV21, result);
-        if (code == ErrorInfo.MOK) {
-            if (result.size() > 0)
-                logger.i(String.format("detectFaces %d, time：%d", result.size(), (System.currentTimeMillis() - begin)));
+        if (code == ErrorInfo.MOK && result.size() > 0) {
+            logger.i(String.format("detectFaces %d, time：%d", result.size(), (System.currentTimeMillis() - begin)));
+            return result;
         } else {
             logger.i(String.format("detectFace fail error code :%d", code));
         }
-        return result;
+        return null;
     }
 
-    public List<FaceFindPersonModel> detectPersons(byte[] nv21, int width, int height) {
-        if (!initSuccess) {
-            return null;
+    /**
+     * 一个Camera摄像头包含的所有人脸信息
+     *
+     * @param nv21
+     * @param width
+     * @param height
+     * @return
+     */
+    public FaceCameraModel detectFaceWithCamera(byte[] nv21, int width, int height) {
+        List<FaceInfo> data = detectFaces(nv21, width, height);
+        if (data != null && data.size() > 0) {
+            return new FaceCameraModel(data, nv21, width, height);
         }
+        return null;
+    }
+
+
+    /**
+     * 检测人脸 以及人脸详细人类信息（年龄、性别、三维角度、活体）
+     *
+     * @param nv21
+     * @param width
+     * @param height
+     * @return
+     */
+    public List<PersonModel> detectPersons(byte[] nv21, int width, int height) {
+        if (!isInit()) return null;
         List<FaceInfo> faceResult = detectFaces(nv21, width, height);
-        if (faceResult == null || faceResult.size() == 0) {
+        if (faceResult == null) {
             return null;
         }
         int code = faceEngine.process(nv21, width, height, FaceConfig.CP_PAF_NV21, faceResult,
@@ -145,12 +155,11 @@ public class AIFace {
         int faceSize = faceResult.size();
         logger.i("getPersonInfo faceSize：" + faceSize);
         if (code == ErrorInfo.MOK && faceSize > 0) {
-            List<FaceFindPersonModel> faceFindModels = new ArrayList<>();
+            List<PersonModel> faceFindModels = new ArrayList<>();
             List<AgeInfo> ageResult = new ArrayList<>();
             List<Face3DAngle> face3DAngleResult = new ArrayList<>();
             List<GenderInfo> genderInfoResult = new ArrayList<>();
             List<LivenessInfo> livenessInfoResult = new ArrayList<>();
-
             int ageCode = faceEngine.getAge(ageResult);
             int face3DAngleCode = faceEngine.getFace3DAngle(face3DAngleResult);
             int genderCode = faceEngine.getGender(genderInfoResult);
@@ -165,8 +174,7 @@ public class AIFace {
                     Face3DAngle face3DAngle = face3DAngleResult.get(i);
                     GenderInfo genderInfo = genderInfoResult.get(i);
                     LivenessInfo livenessInfo = livenessInfoResult.get(i);
-
-                    FaceFindPersonModel personModel = new FaceFindPersonModel();
+                    PersonModel personModel = new PersonModel();
                     personModel.setRect(faceInfo.getRect());
                     personModel.setFaceId(faceInfo.getFaceId());
                     personModel.setOrient(faceInfo.getOrient());
@@ -187,6 +195,39 @@ public class AIFace {
         return null;
     }
 
+
+    /**
+     * 一个Camera摄像头包含所有人的信息
+     *
+     * @param nv21
+     * @param width
+     * @param height
+     * @return
+     */
+    public PersonCameraModel detectPersonWithCamera(byte[] nv21, int width, int height) {
+        List<PersonModel> data = detectPersons(nv21, width, height);
+        if (data != null && data.size() > 0) {
+            return new PersonCameraModel(data, nv21, width, height);
+        }
+        return null;
+    }
+
+    /**
+     * 摄像头一帧数据包含所有人脸特征信息数据
+     *
+     * @param nv21
+     * @param width
+     * @param height
+     * @return
+     */
+    public FeatureCameraModel findFeatureWithCamera(byte[] nv21, int width, int height) {
+        List<FeatureModel> data = findFaceFeature(nv21, width, height);
+        if (data != null && data.size() > 0) {
+            return new FeatureCameraModel(data, nv21, width, height);
+        }
+        return null;
+    }
+
     /**
      * 提取摄像头所有人脸特征数据
      *
@@ -195,14 +236,14 @@ public class AIFace {
      * @param height
      * @return
      */
-    public List<FaceFindModel> extractAllFaceFeature(byte[] nv21, int width, int height) {
-        if (!initSuccess) return null;
+    public List<FeatureModel> findFaceFeature(byte[] nv21, int width, int height) {
+        if (!isInit()) return null;
         long begin = System.currentTimeMillis();
         List<FaceInfo> faceInfoList = detectFaces(nv21, width, height);
         if (faceInfoList != null && faceInfoList.size() > 0) {
-            List<FaceFindModel> faceFeatureList = new ArrayList<>();
+            List<FeatureModel> faceFeatureList = new ArrayList<>();
             for (FaceInfo faceInfo : faceInfoList) {
-                FaceFindModel faceFindModel = extractFaceFeature(nv21, width, height, faceInfo);
+                FeatureModel faceFindModel = findSingleFaceFeature(nv21, width, height, faceInfo);
                 if (faceFindModel != null) {
                     faceFeatureList.add(faceFindModel);
                 }
@@ -222,14 +263,14 @@ public class AIFace {
      * @param faceInfo
      * @return
      */
-    public FaceFindModel extractFaceFeature(byte[] nv21, int width, int height, FaceInfo faceInfo) {
-        if (!initSuccess) return null;
+    public FeatureModel findSingleFaceFeature(byte[] nv21, int width, int height, FaceInfo faceInfo) {
+        if (!isInit()) return null;
         long begin = System.currentTimeMillis();
         FaceFeature result = new FaceFeature();
         int code = faceEngine.extractFaceFeature(nv21, width, height, FaceConfig.CP_PAF_NV21, faceInfo, result);
         if (code == ErrorInfo.MOK) {
-            logger.i("extractFaceFeature time：" + (System.currentTimeMillis() - begin));
-            return new FaceFindModel(width, height, faceInfo, result);
+            logger.i("findSingleFaceFeature time：" + (System.currentTimeMillis() - begin));
+            return new FeatureModel(width, height, faceInfo, result);
         } else {
             logger.i(String.format("extractFaceFeature fail error code :%d", code));
             return null;
@@ -243,8 +284,8 @@ public class AIFace {
      * @param feature2
      * @return
      */
-    private FaceSimilar compareFaceFeature(FaceFeature feature1, FaceFeature feature2) {
-        if (!initSuccess) return null;
+    public FaceSimilar compareFaceFeature(FaceFeature feature1, FaceFeature feature2) {
+        if (!isInit()) return null;
         FaceSimilar result = new FaceSimilar();
         int code = faceEngine.compareFaceFeature(feature1, feature2, result);
         if (code == ErrorInfo.MOK) {
@@ -255,166 +296,8 @@ public class AIFace {
         }
     }
 
-    /**
-     * 单张人脸与库中人脸对比
-     */
-    public FaceFindMatchModel matchFace(byte[] data, int width, int height, FaceInfo faceInfo) {
-        if (!initSuccess) {
-            return null;
-        }
-        long begin = System.currentTimeMillis();
-        FaceFindModel faceFindModel = extractFaceFeature(data, width, height, faceInfo);
-        if (faceFindModel == null) {
-            return null;
-        }
-        if (registeredFaces.size() == 0) {
-            return null;
-        }
-        FaceFindMatchModel findMatchingModel = new FaceFindMatchModel();
-        for (FaceRegister registeredFace : registeredFaces) {
-            FaceSimilar similar = compareFaceFeature(faceFindModel.getFaceFeature(), new FaceFeature(registeredFace.getFeatureData()));
-            if (similar != null) {
-                logger.e("对比分数：" + similar.getScore());
-                if (similar.getScore() > score) {
-                    // 没有对比成功的记录
-                    if (!findMatchingModel.isMatching()) {
-                        findMatchingModel.setMatching(true);
-                        findMatchingModel.setScore(similar.getScore());
-                        findMatchingModel.setImagePath(registeredFace.getImagePath());
-                        findMatchingModel.setPersonId(registeredFace.getPerson_id());
-                        findMatchingModel.setName(registeredFace.getName());
-                        findMatchingModel.setGender(registeredFace.getGender());
-                    }
-                    // 有记录，但新记录更接近
-                    else {
-                        if (similar.getScore() > findMatchingModel.getScore()) {
-                            findMatchingModel.setMatching(true);
-                            findMatchingModel.setScore(similar.getScore());
-                            findMatchingModel.setPersonId(registeredFace.getPerson_id());
-                            findMatchingModel.setName(registeredFace.getName());
-                            findMatchingModel.setGender(registeredFace.getGender());
-                        }
-                    }
-                }
-            }
-        }
-        logger.i("人脸对比耗费时间：" + (System.currentTimeMillis() - begin));
-        return findMatchingModel;
-    }
-
-    /**
-     * 单张人脸与库中人脸对比
-     *
-     * @param faceFeature1
-     * @return
-     */
-    public FaceFindMatchModel matchFace(FaceFeature faceFeature1) {
-        if (!initSuccess) {
-            return null;
-        }
-        long begin = System.currentTimeMillis();
-        FaceFindMatchModel findMatchingModel = new FaceFindMatchModel();
-        if (registeredFaces.size() == 0) {
-            return null;
-        }
-        for (FaceRegister registeredFace : registeredFaces) {
-            FaceSimilar similar = compareFaceFeature(faceFeature1, new FaceFeature(registeredFace.getFeatureData()));
-            if (similar != null) {
-                logger.e("对比分数：" + similar.getScore());
-                if (similar.getScore() > score) {
-                    // 没有对比成功的记录
-                    if (!findMatchingModel.isMatching()) {
-                        findMatchingModel.setMatching(true);
-                        findMatchingModel.setScore(similar.getScore());
-                        findMatchingModel.setImagePath(registeredFace.getImagePath());
-                        findMatchingModel.setPersonId(registeredFace.getPerson_id());
-                        findMatchingModel.setName(registeredFace.getName());
-                        findMatchingModel.setGender(registeredFace.getGender());
-                    }
-                    // 有记录，但新记录更接近
-                    else {
-                        if (similar.getScore() > findMatchingModel.getScore()) {
-                            findMatchingModel.setMatching(true);
-                            findMatchingModel.setScore(similar.getScore());
-                            findMatchingModel.setPersonId(registeredFace.getPerson_id());
-                            findMatchingModel.setName(registeredFace.getName());
-                            findMatchingModel.setGender(registeredFace.getGender());
-                        }
-                    }
-                }
-            }
-        }
-        logger.e("人脸对比耗费时间：" + (System.currentTimeMillis() - begin));
-        return findMatchingModel;
-    }
-
-    // 获取人脸特征码并存储人脸图片到本地
-    public boolean registerNv21(byte[] nv21, FaceFindModel model, String name, int age, String sex, String dir) {
-        if (!initSuccess) return false;
-        try {
-            byte[] featureData = model.getFeatureData();
-            if (featureData == null || featureData.length != FaceFeature.FEATURE_SIZE) {
-                FaceFindModel faceFindModel = extractFaceFeature(nv21, model.getCameraWidth(), model.getCameraHeight(), model.getFaceInfo());
-                if (faceFindModel == null) {
-                    return false;
-                } else {
-                    featureData = faceFindModel.getFeatureData();
-                }
-            }
-            String userName = name == null ? String.valueOf(System.currentTimeMillis()) : name;
-            String imgFile = dir + File.separator + userName + ".jpg";
-            FaceUtils.saveFaceImage(imgFile, model, nv21);
-            FaceRegister registeredFace = new FaceRegister();
-            registeredFace.setAge(age);
-            registeredFace.setGender(sex);
-            registeredFace.setFeatureData(featureData);
-            registeredFace.setName(name);
-            registeredFace.setImagePath(imgFile);
-            registeredFace.setFaceTime(System.currentTimeMillis());
-            logger.d("人脸信息保存到本地数据库：" + registeredFace.toString());
-            dbHelper.save(registeredFace);
-            registeredFaces.remove(registeredFace);
-            registeredFaces.add(registeredFace);
-            return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    public enum Action {
-        DETECT(FaceConfig.ASF_FACE_DETECT),
-
-        DEEP_DETECT(FaceConfig.ASF_FACE_DETECT
-                | FaceConfig.ASF_AGE
-                | FaceConfig.ASF_GENDER
-                | FaceConfig.ASF_FACE3DANGLE
-                | FaceConfig.ASF_LIVENESS),
-
-        FEATURE_EXTRACT(FaceConfig.ASF_FACE_DETECT
-                | FaceConfig.ASF_FACE_RECOGNITION),
-
-        MATCH(FaceConfig.ASF_FACE_DETECT
-                | FaceConfig.ASF_FACE_RECOGNITION),
-
-        DETECT_AND_MATCH(FaceConfig.ASF_FACE_DETECT
-                | FaceConfig.ASF_FACE_RECOGNITION
-                | FaceConfig.ASF_AGE
-                | FaceConfig.ASF_GENDER
-                | FaceConfig.ASF_FACE3DANGLE
-                | FaceConfig.ASF_LIVENESS);
-
-        //需要启用的功能组合
-        int combinedMask;
-
-        Action(int mask) {
-            this.combinedMask = mask;
-        }
-    }
 
     public static final class Builder {
-        // 对比置信度
-        float score;
         //检测模式
         long mode;
         //人脸检测角度
@@ -428,17 +311,11 @@ public class AIFace {
         int combinedMask;
 
         public Builder() {
-            score = 0.75f;
             mode = FaceConfig.ASF_DETECT_MODE_VIDEO;
             orientPriority = FaceConfig.ASF_OP_0_HIGHER_EXT;
             scaleVal = 16;
             maxNum = 25;
-            combinedMask = FaceConfig.ASF_FACE_DETECT;
-        }
-
-        public Builder score(float score) {
-            this.score = score;
-            return this;
+            combinedMask = FaceAction.DETECT.combinedMask;
         }
 
         public Builder mode(long mode) {
@@ -471,7 +348,7 @@ public class AIFace {
             return this;
         }
 
-        public Builder combinedMask(Action action) {
+        public Builder combinedMask(FaceAction action) {
             this.combinedMask = action.combinedMask;
             return this;
         }

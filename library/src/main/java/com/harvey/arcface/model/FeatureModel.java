@@ -1,12 +1,12 @@
-package com.harvey.arcface.moodel;
+package com.harvey.arcface.model;
 
 import android.graphics.Rect;
 
 import com.arcsoft.face.FaceFeature;
 import com.arcsoft.face.FaceInfo;
 
-//单个查询人脸信息
-public class FaceFindModel {
+//单个查询人脸信息特征
+public class FeatureModel {
     // 摄像头的尺寸
     int cameraWidth;
     int cameraHeight;
@@ -19,7 +19,7 @@ public class FaceFindModel {
     //人脸特征
     byte[] featureData;
 
-    public FaceFindModel(int cameraWidth, int cameraHeight, Rect rect, int degree, int faceId, byte[] featureData) {
+    public FeatureModel(int cameraWidth, int cameraHeight, Rect rect, int degree, int faceId, byte[] featureData) {
         this.cameraWidth = cameraWidth;
         this.cameraHeight = cameraHeight;
         this.rect = rect;
@@ -28,7 +28,7 @@ public class FaceFindModel {
         this.featureData = featureData;
     }
 
-    public FaceFindModel(int cameraWidth, int cameraHeight, FaceInfo faceInfo, FaceFeature faceFeature) {
+    public FeatureModel(int cameraWidth, int cameraHeight, FaceInfo faceInfo, FaceFeature faceFeature) {
         this.cameraWidth = cameraWidth;
         this.cameraHeight = cameraHeight;
         this.rect = faceInfo.getRect();
@@ -37,7 +37,7 @@ public class FaceFindModel {
         this.featureData = faceFeature.getFeatureData();
     }
 
-    public FaceFindModel(FaceFindModel findModel) {
+    public FeatureModel(FeatureModel findModel) {
         this.cameraWidth = findModel.cameraWidth;
         this.cameraHeight = findModel.cameraHeight;
         this.rect = new Rect(findModel.rect);
@@ -102,6 +102,9 @@ public class FaceFindModel {
         return new FaceInfo(rect, degree);
     }
 
+    public FeatureModel clone() {
+        return new FeatureModel(this);
+    }
 
     /**
      * 将图像中需要截取的Rect向外扩张一倍，若扩张一倍会溢出，则扩张到边界，若Rect已溢出，则收缩到边界
@@ -277,10 +280,6 @@ public class FaceFindModel {
 
         Rect rect = new Rect(left, top, right, bottom);
         return rect;
-    }
-
-    public FaceFindModel clone() {
-        return new FaceFindModel(this);
     }
 
 }

@@ -1,32 +1,35 @@
-package com.harvey.arcface.moodel;
+package com.harvey.arcface.model;
 
 import android.graphics.Rect;
 
-public class FaceFindPersonModel {
+public class PersonModel {
     //人脸信息
     Rect rect;
     int orient;
     int faceId = -1;
-
     int age;
-    /**
-     * {@link com.arcsoft.face.GenderInfo}
-     */
     int gender;
-
-    /**
-     * 三维角度
-     * {@link com.arcsoft.face.Face3DAngle}
-     */
     float yaw;
     float roll;
     float pitch;
     int status;
-    /**
-     * 活体
-     * {@link com.arcsoft.face.LivenessInfo}
-     */
     int liveness;
+
+    public PersonModel() {
+    }
+
+    public PersonModel(PersonModel model) {
+        this.rect = new Rect(model.rect);
+        this.orient = model.orient;
+        this.faceId = model.faceId;
+        this.age = model.age;
+        this.gender = model.gender;
+        this.yaw = model.yaw;
+        this.roll = model.roll;
+        this.pitch = model.pitch;
+        this.status = model.status;
+        this.liveness = model.liveness;
+    }
 
     public Rect getRect() {
         return rect;
@@ -106,6 +109,10 @@ public class FaceFindPersonModel {
 
     public void setLiveness(int liveness) {
         this.liveness = liveness;
+    }
+
+    public PersonModel clone() {
+        return new PersonModel(this);
     }
 
     @Override

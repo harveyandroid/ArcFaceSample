@@ -1,4 +1,4 @@
-package com.harvey.arcface.template;
+package com.harvey.arcface.utils;
 
 public interface ILogger {
 

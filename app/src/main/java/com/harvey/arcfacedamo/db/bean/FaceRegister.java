@@ -1,8 +1,8 @@
-package com.harvey.db.bean;
+package com.harvey.arcfacedamo.db.bean;
 
 import org.greenrobot.greendao.annotation.Entity;
-import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.Generated;
+import org.greenrobot.greendao.annotation.Id;
 
 import java.util.Objects;
 

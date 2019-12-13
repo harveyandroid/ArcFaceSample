@@ -9,7 +9,7 @@ import android.media.ExifInterface;
 import android.util.Log;
 
 import com.arcsoft.face.util.ImageUtils;
-import com.harvey.arcface.moodel.FaceFindModel;
+import com.harvey.arcface.model.FeatureModel;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
@@ -21,7 +21,7 @@ import java.io.IOException;
 
 public class FaceUtils {
 
-    public static Bitmap getFaceBitmap(FaceFindModel faceFindModel, byte[] data) {
+    public static Bitmap getFaceBitmap(FeatureModel faceFindModel, byte[] data) {
         YuvImage yuv = new YuvImage(data, ImageFormat.NV21, faceFindModel.getCameraWidth(),
                 faceFindModel.getCameraHeight(), null);
         ByteArrayOutputStream ops = new ByteArrayOutputStream();
@@ -39,7 +39,7 @@ public class FaceUtils {
     }
 
 
-    public static void saveFaceImage(String filepath, FaceFindModel faceFindModel, byte[] data) throws IOException {
+    public static void saveFaceImage(String filepath, FeatureModel faceFindModel, byte[] data) throws IOException {
         FileOutputStream fileOutputStream = null;
         ByteArrayOutputStream byteArrayOutputStream = null;
         Bitmap bitmap = null;

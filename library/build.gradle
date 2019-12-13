@@ -1,5 +1,4 @@
 apply plugin: 'com.android.library'
-apply plugin: 'org.greenrobot.greendao'
 apply from: './maven-publish.gradle'
 
 android {
@@ -8,8 +7,8 @@ android {
     defaultConfig {
         minSdkVersion project.MIN_SDK as int
         targetSdkVersion project.TARGET_SDK as int
-        versionName "1.0.4"
-        versionCode 104
+        versionName "1.0.5"
+        versionCode 105
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
     }
@@ -29,17 +28,9 @@ android {
 
 }
 
-greendao {
-    schemaVersion 1//指定数据库版本号，更新操作会用到;
-    daoPackage 'com.harvey.db.dao'//自动生成的dao的包名，包名默认是entity所在的包；
-    targetGenDir 'src/main/java'//生成数据库文件的目录
-}
-
 dependencies {
     api fileTree(include: ['*.jar'], dir: '../libs')
     testImplementation 'junit:junit:4.12'
-    implementation "org.greenrobot:greendao:${project.GREENDAO}"
-    implementation "androidx.collection:collection:1.0.0"
     androidTestImplementation 'androidx.test:runner:1.1.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'
 }

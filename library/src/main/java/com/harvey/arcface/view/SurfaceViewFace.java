@@ -16,7 +16,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.harvey.arcface.R;
-import com.harvey.arcface.moodel.FaceFindModel;
+import com.harvey.arcface.model.FeatureModel;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -34,7 +34,7 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
     private int surfaceWidth;
     private int surfaceHeight;
     // 人脸数据列表
-    private List<FaceFindModel> faceFindModels;
+    private List<FeatureModel> faceFindModels;
     private boolean frontCamera = true;//默认前置
     private int displayOrientation = 0;
     private Paint rectPaint;
@@ -51,7 +51,7 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
                     Canvas canvas = surfaceHolder.lockCanvas();
                     if (canvas != null) {
                         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-                        for (FaceFindModel faceFindModel : faceFindModels) {
+                        for (FeatureModel faceFindModel : faceFindModels) {
                             drawFaceRect(canvas, faceFindModel);
                             drawFindFace(canvas, faceFindModel);
                         }
@@ -68,11 +68,11 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
             }
         }
 
-        private void drawFaceRect(Canvas canvas, FaceFindModel model) {
+        private void drawFaceRect(Canvas canvas, FeatureModel model) {
             canvas.drawRect(model.adjustRect(displayOrientation, frontCamera, surfaceWidth, surfaceHeight), rectPaint);
         }
 
-        private void drawFindFace(Canvas canvas, FaceFindModel model) {
+        private void drawFindFace(Canvas canvas, FeatureModel model) {
             Matrix matrix = new Matrix();
             Matrix matrix2 = new Matrix();
 
@@ -116,7 +116,7 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
     }
 
     // 更新人脸列表
-    public void updateFace(List<FaceFindModel> faceFindModels) {
+    public void updateFace(List<FeatureModel> faceFindModels) {
         surfaceStop = false;
         if (faceFindModels != null && faceFindModels.size() > 0) {
             this.faceFindModels.clear();

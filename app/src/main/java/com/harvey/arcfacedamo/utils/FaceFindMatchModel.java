@@ -1,4 +1,4 @@
-package com.harvey.arcface.moodel;
+package com.harvey.arcfacedamo.utils;
 
 import java.io.Serializable;
 

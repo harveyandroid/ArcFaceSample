@@ -18,8 +18,8 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.arcsoft.face.util.ImageUtils;
-import com.harvey.arcface.moodel.FaceFindCameraModel;
-import com.harvey.arcface.moodel.FaceFindModel;
+import com.harvey.arcface.model.FeatureCameraModel;
+import com.harvey.arcface.model.FeatureModel;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,7 +31,6 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Created by harvey on 2018/1/12.
  */
-
 public class SurfaceViewSaveFace extends SurfaceView implements SurfaceHolder.Callback {
     public static final int ERROR_NO = 0;
     public static final int ERROR_MOREFACE = 1;
@@ -48,7 +47,7 @@ public class SurfaceViewSaveFace extends SurfaceView implements SurfaceHolder.Ca
     private int surfaceWidth;
     private int surfaceHeight;
     // 人脸数据列表
-    private FaceFindCameraModel faceModel;
+    private FeatureCameraModel faceModel;
     private SaveFaceHandler saveFaceHandler;
     private Lock mLock = new ReentrantLock(true);
     private Condition condition = mLock.newCondition();
@@ -79,15 +78,15 @@ public class SurfaceViewSaveFace extends SurfaceView implements SurfaceHolder.Ca
                         mLock.lock();
                         try {
                             canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-                            if (faceModel == null || faceModel.getFaceFindModels() == null
-                                    || faceModel.getFaceFindModels().size() == 0) {
+                            if (faceModel == null || faceModel.getFeatureModels() == null
+                                    || faceModel.getFeatureModels().size() == 0) {
                                 drawFaceOutRect(canvas, false);
                                 callErrorBack(ERROR_NOFACE);
-                            } else if (faceModel.getFaceFindModels().size() != 1) {
+                            } else if (faceModel.getFeatureModels().size() != 1) {
                                 drawFaceOutRect(canvas, false);
                                 callErrorBack(ERROR_MOREFACE);
                             } else {
-                                Rect face = faceModel.getFaceFindModels().get(0).adjustRect(displayOrientation, frontCamera, surfaceWidth, surfaceHeight);
+                                Rect face = faceModel.getFeatureModels().get(0).adjustRect(displayOrientation, frontCamera, surfaceWidth, surfaceHeight);
                                 // 在矩形框外侧
                                 if (!faceOut.contains(face)) {
                                     drawFaceOutRect(canvas, false);
@@ -102,7 +101,7 @@ public class SurfaceViewSaveFace extends SurfaceView implements SurfaceHolder.Ca
                                 } else {
                                     drawFaceOutRect(canvas, true);
                                     drawFaceRect(canvas, face, true);
-//                                    drawFaceImg(canvas, faceModel.getFaceFindModels().get(0), faceModel.getCameraData());
+//                                    drawFaceImg(canvas, faceModel.getFeatureModels().get(0), faceModel.getCameraData());
                                     callTimeBack(timeCount * SLEEP_COUNT);
                                     timeCount++;
                                 }
@@ -183,7 +182,7 @@ public class SurfaceViewSaveFace extends SurfaceView implements SurfaceHolder.Ca
         }
 
         // 绘制人脸
-        private void drawFaceImg(Canvas canvas, FaceFindModel model, byte[] data) {
+        private void drawFaceImg(Canvas canvas, FeatureModel model, byte[] data) {
             ByteArrayOutputStream ops = null;
             Bitmap bmp = null;
             try {
@@ -237,7 +236,7 @@ public class SurfaceViewSaveFace extends SurfaceView implements SurfaceHolder.Ca
     }
 
     // 更新人脸列表
-    public void uploadFace(List<FaceFindModel> faceFindModels, byte[] frameBytes) {
+    public void uploadFace(List<FeatureModel> faceFindModels, byte[] frameBytes, int cameraWidth, int cameraHeight) {
         if (!surfaceRun)
             return;
         if (surfaceStop)
@@ -245,10 +244,12 @@ public class SurfaceViewSaveFace extends SurfaceView implements SurfaceHolder.Ca
         mLock.lock();
         try {
             if (faceModel == null) {
-                faceModel = new FaceFindCameraModel(faceFindModels, frameBytes);
+                faceModel = new FeatureCameraModel(faceFindModels, frameBytes, cameraWidth, cameraHeight);
             } else {
-                faceModel.setFaceFindModels(faceFindModels);
-                faceModel.setCameraData(frameBytes);
+                faceModel.setFeatureModels(faceFindModels);
+                faceModel.setNv21(frameBytes);
+                faceModel.setWidth(cameraWidth);
+                faceModel.setHeight(cameraHeight);
             }
         } finally {
             mLock.unlock();
@@ -286,7 +287,7 @@ public class SurfaceViewSaveFace extends SurfaceView implements SurfaceHolder.Ca
     }
 
     public interface SaveFaceListener {
-        void onSuccess(FaceFindCameraModel faceModel);
+        void onSuccess(FeatureCameraModel faceModel);
 
         void onTimeSecondDown(int TimeSecond);
 
@@ -303,7 +304,7 @@ public class SurfaceViewSaveFace extends SurfaceView implements SurfaceHolder.Ca
             this.msaveFaceListener = saveFaceListener;
         }
 
-        public void onSuccess(FaceFindCameraModel faceModel) {
+        public void onSuccess(FeatureCameraModel faceModel) {
             Message msg = new Message();
             msg.what = onSuccess;
             msg.obj = faceModel;
@@ -332,7 +333,7 @@ public class SurfaceViewSaveFace extends SurfaceView implements SurfaceHolder.Ca
             if (msaveFaceListener != null) {
                 switch (msg.what) {
                     case onSuccess:
-                        msaveFaceListener.onSuccess((FaceFindCameraModel) msg.obj);
+                        msaveFaceListener.onSuccess((FeatureCameraModel) msg.obj);
                         break;
                     case onTimeSecondDown:
                         msaveFaceListener.onTimeSecondDown((int) msg.obj);
