@@ -1,5 +1,4 @@
 apply plugin: 'com.android.library'
-apply plugin: 'org.greenrobot.greendao'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
@@ -29,23 +28,10 @@ android {
 
 }
 
-greendao {
-    schemaVersion 1//指定数据库版本号，更新操作会用到;
-    daoPackage 'com.harvey.db.dao'//自动生成的dao的包名，包名默认是entity所在的包；
-    targetGenDir 'src/main/java'//生成数据库文件的目录
-}
 
 dependencies {
-    implementation fileTree( dir: '../libs',include: ['*.jar'])
+    implementation fileTree(dir: '../libs', include: ['*.jar'])
     testImplementation 'junit:junit:4.12'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
-    implementation "org.greenrobot:greendao:${project.GREENDAO}"
-    implementation 'androidx.appcompat:appcompat:1.0.0'
-    //解决test 和APP版本不一致问题
-    androidTestImplementation 'androidx.test:runner:1.1.0', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    }
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    }
+    androidTestImplementation 'androidx.test:runner:1.1.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'
 }
