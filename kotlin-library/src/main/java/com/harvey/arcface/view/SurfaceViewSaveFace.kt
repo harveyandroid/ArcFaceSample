@@ -20,30 +20,28 @@ import java.util.concurrent.locks.ReentrantLock
 class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(context, attrs), SurfaceHolder.Callback {
     private var TimeSecondDown = 3
     private var ERRORCODE = 0
-    private val surfaceHolder: SurfaceHolder = holder
+    private val surfaceHolder = holder.also {
+        it.addCallback(this)
+        it.setFormat(PixelFormat.TRANSPARENT)
+    }
     private var surfaceRun = false
     private var surfaceStop = true
     // SurfaceView尺寸
-    private var surfaceWidth: Int = 0
-    private var surfaceHeight: Int = 0
+    private var surfaceWidth = width
+    private var surfaceHeight = height
     // 人脸数据列表
-    private var faceModel: FeatureCameraModel? = null
-    private val saveFaceHandler: SaveFaceHandler
+    private var featureCameraModel: FeatureCameraModel? = null
+    private val saveFaceHandler by lazy {
+        SaveFaceHandler()
+    }
     private val mLock = ReentrantLock(true)
-    private val condition = mLock.newCondition()
-    private var frontCamera = true//默认前置
+    private var frontCamera = true
     private var displayOrientation = 0
-    private var thread: Thread? = null
-    private var faceOut: Rect? = null
+    private val faceOut by lazy {
+        Rect(100, 100, surfaceWidth - 100, surfaceHeight - 100)
+    }
     private var timeCount = 0
     private var drawRunnable = DrawAction()
-
-    init {
-        surfaceHolder.addCallback(this)
-        // 透明背景
-        surfaceHolder.setFormat(PixelFormat.TRANSPARENT)
-        saveFaceHandler = SaveFaceHandler()
-    }
 
     fun uploadTimeSecondDown(time: Int) {
         this.TimeSecondDown = time
@@ -63,21 +61,14 @@ class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(c
     }
 
     // 更新人脸列表
-    fun uploadFace(faceFindModels: MutableList<FeatureModel>, frameBytes: ByteArray, cameraWidth: Int, cameraHeight: Int) {
+    fun uploadFace(model: FeatureCameraModel) {
         if (!surfaceRun)
             return
         if (surfaceStop)
             return
         mLock.lock()
         try {
-            if (faceModel == null) {
-                faceModel = FeatureCameraModel(faceFindModels, frameBytes, cameraWidth, cameraHeight)
-            } else {
-                faceModel!!.setFeatureModels(faceFindModels)
-                faceModel!!.nv21 = frameBytes
-                faceModel!!.width = cameraWidth
-                faceModel!!.height = cameraHeight
-            }
+            featureCameraModel = model
         } finally {
             mLock.unlock()
         }
@@ -88,14 +79,8 @@ class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(c
     }
 
     override fun surfaceCreated(mSurfaceHolder: SurfaceHolder) {
-        surfaceRun = true
-        surfaceStop = false
-        surfaceWidth = width
-        surfaceHeight = height
-        thread = Thread(drawRunnable)
-        thread!!.start()
-        // 设置矩形框
-        faceOut = Rect(100, 100, surfaceWidth - 100, surfaceHeight - 100)
+        val thread = Thread(drawRunnable)
+        thread.start()
     }
 
     override fun surfaceChanged(surfaceHolder: SurfaceHolder, i: Int, i1: Int, i2: Int) {
@@ -106,12 +91,10 @@ class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(c
         setSaveFaceListener(null)
         surfaceRun = false
         surfaceStop = true
-        while (thread!!.isAlive) {
-        }
     }
 
     interface SaveFaceListener {
-        fun onSuccess(faceModel: FeatureCameraModel)
+        fun onSuccess(faceModel: FeatureCameraModel?)
 
         fun onTimeSecondDown(TimeSecond: Int)
 
@@ -122,13 +105,13 @@ class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(c
         private val onSuccess = 1
         private val onTimeSecondDown = 2
         private val onErrorMsg = 3
-        private var msaveFaceListener: SaveFaceListener? = null
+        private var mSaveFaceListener: SaveFaceListener? = null
 
         fun setListener(saveFaceListener: SaveFaceListener?) {
-            this.msaveFaceListener = saveFaceListener
+            this.mSaveFaceListener = saveFaceListener
         }
 
-        fun onSuccess(faceModel: FeatureCameraModel) {
+        fun onSuccess(faceModel: FeatureCameraModel?) {
             val msg = Message()
             msg.what = onSuccess
             msg.obj = faceModel
@@ -153,11 +136,11 @@ class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(c
 
         override fun handleMessage(msg: Message) {
             super.handleMessage(msg)
-            if (msaveFaceListener != null) {
+            if (mSaveFaceListener != null) {
                 when (msg.what) {
-                    onSuccess -> msaveFaceListener!!.onSuccess(msg.obj as FeatureCameraModel)
-                    onTimeSecondDown -> msaveFaceListener!!.onTimeSecondDown(msg.obj as Int)
-                    onErrorMsg -> msaveFaceListener!!.onErrorMsg(msg.obj as Int)
+                    onSuccess -> mSaveFaceListener!!.onSuccess(if (msg.obj == null) null else (msg.obj as FeatureCameraModel))
+                    onTimeSecondDown -> mSaveFaceListener!!.onTimeSecondDown(msg.obj as Int)
+                    onErrorMsg -> mSaveFaceListener!!.onErrorMsg(msg.obj as Int)
                 }
             }
         }
@@ -173,7 +156,7 @@ class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(c
                         surfaceStop = true
                         mLock.lock()
                         try {
-                            saveFaceHandler.onSuccess(faceModel!!.clone())
+                            saveFaceHandler.onSuccess(featureCameraModel)
                         } finally {
                             mLock.unlock()
                         }
@@ -184,15 +167,14 @@ class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(c
                         mLock.lock()
                         try {
                             canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
-                            if (faceModel == null || faceModel!!.getFeatureModels() == null
-                                    || faceModel!!.getFeatureModels().size == 0) {
+                            if (featureCameraModel == null || featureCameraModel!!.featureModels.isNullOrEmpty()) {
                                 drawFaceOutRect(canvas, false)
                                 callErrorBack(ERROR_NOFACE)
-                            } else if (faceModel!!.getFeatureModels().size != 1) {
+                            } else if (featureCameraModel!!.featureModels.size != 1) {
                                 drawFaceOutRect(canvas, false)
                                 callErrorBack(ERROR_MOREFACE)
                             } else {
-                                val face = faceModel!!.getFeatureModels()[0].adjustRect(displayOrientation, frontCamera, surfaceWidth, surfaceHeight)
+                                val face = featureCameraModel!!.featureModels[0].adjustRect(displayOrientation, frontCamera, surfaceWidth, surfaceHeight)
                                 // 在矩形框外侧
                                 if (!faceOut!!.contains(face)) {
                                     drawFaceOutRect(canvas, false)
@@ -205,7 +187,7 @@ class SurfaceViewSaveFace(context: Context, attrs: AttributeSet) : SurfaceView(c
                                 } else {
                                     drawFaceOutRect(canvas, true)
                                     drawFaceRect(canvas, face, true)
-                                    //                                    drawFaceImg(canvas, faceModel.getFeatureModels().get(0), faceModel.getCameraData());
+                                    //                                    drawFaceImg(canvas, featureCameraModel.getFeatureModels().get(0), featureCameraModel.getCameraData());
                                     callTimeBack(timeCount * SLEEP_COUNT)
                                     timeCount++
                                 }// 距离摄像头过远
