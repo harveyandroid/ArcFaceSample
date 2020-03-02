@@ -5,7 +5,6 @@ import com.arcsoft.face.*
 import com.harvey.arcface.model.*
 import com.harvey.arcface.utils.DefaultLogger
 import com.harvey.arcface.utils.FaceConfig
-import com.harvey.arcface.utils.ILogger
 import java.util.*
 
 
@@ -13,32 +12,34 @@ import java.util.*
  * Created by harvey on 2018/1/12.
  */
 
+fun AIFace.showLog(isShowLog: Boolean) {
+    logger.showLog(isShowLog)
+}
+
+fun AIFace.showStackTrace(isShowStackTrace: Boolean) {
+    logger.showStackTrace(isShowStackTrace)
+}
+
 class AIFace private constructor(builder: Builder) {
-    //人脸检测角度
-    private var orientPriority: Int = 0
-    private val faceEngine: FaceEngine
+    private val faceEngine = FaceEngine()
+    var logger = DefaultLogger()
     @Volatile
     @get:Synchronized
-    var isInit = false
+    private var isInit = false
         private set
     //检测模式
-    private val mode: Long
+    private val mode = builder.mode
+    //人脸检测角度
+    private val orientPriority = builder.orientPriority
     //识别的最小人脸比例
-    private val scaleVal: Int
+    private val scaleVal = builder.scaleVal
     //引擎最多能检测出的人脸数
-    private val maxNum: Int
+    private val maxNum = builder.maxNum
     //需要启用的功能组合
-    private val combinedMask: Int
-    private val mContext: Context
+    private val combinedMask = builder.combinedMask
+    private val mContext = builder.context
 
     init {
-        mode = builder.mode
-        orientPriority = builder.orientPriority
-        scaleVal = builder.scaleVal
-        maxNum = builder.maxNum
-        combinedMask = builder.combinedMask
-        mContext = builder.context
-        faceEngine = FaceEngine()
         init()
     }
 
@@ -77,10 +78,10 @@ class AIFace private constructor(builder: Builder) {
      * @param height
      * @return
      */
-    fun detectFaces(nv21: ByteArray, width: Int, height: Int): MutableList<FaceInfo>? {
+    fun detectFaces(nv21: ByteArray, width: Int, height: Int): List<FaceInfo>? {
         if (!isInit) return null
         val begin = System.currentTimeMillis()
-        val result = ArrayList<FaceInfo>()
+        val result = mutableListOf<FaceInfo>()
         val code = faceEngine.detectFaces(nv21, width, height, FaceConfig.CP_PAF_NV21, result)
         if (code == ErrorInfo.MOK && result.isNotEmpty()) {
             logger.i(String.format("detectFaces %d, time：%d", result.size, System.currentTimeMillis() - begin))
@@ -101,7 +102,7 @@ class AIFace private constructor(builder: Builder) {
      */
     fun detectFaceWithCamera(nv21: ByteArray, width: Int, height: Int): FaceCameraModel? {
         val data = detectFaces(nv21, width, height)
-        return if (data.isNullOrEmpty()) null else FaceCameraModel(data, nv21, width, height)
+        return if (data.isNullOrEmpty()) null else FaceCameraModel(data, nv21.clone(), width, height)
     }
 
 
@@ -113,7 +114,7 @@ class AIFace private constructor(builder: Builder) {
      * @param height
      * @return
      */
-    fun detectPersons(nv21: ByteArray, width: Int, height: Int): MutableList<PersonModel>? {
+    fun detectPersons(nv21: ByteArray, width: Int, height: Int): List<PersonModel>? {
         if (!isInit) return null
         val faceResult = detectFaces(nv21, width, height)
         if (faceResult.isNullOrEmpty()) {
@@ -127,11 +128,11 @@ class AIFace private constructor(builder: Builder) {
         val faceSize = faceResult.size
         logger.i("detectPersons faceSize：$faceSize")
         if (code == ErrorInfo.MOK) {
-            val faceFindModels = ArrayList<PersonModel>()
-            val ageResult = ArrayList<AgeInfo>()
-            val face3DAngleResult = ArrayList<Face3DAngle>()
-            val genderInfoResult = ArrayList<GenderInfo>()
-            val livenessInfoResult = ArrayList<LivenessInfo>()
+            val faceFindModels = mutableListOf<PersonModel>()
+            val ageResult = mutableListOf<AgeInfo>()
+            val face3DAngleResult = mutableListOf<Face3DAngle>()
+            val genderInfoResult = mutableListOf<GenderInfo>()
+            val livenessInfoResult = mutableListOf<LivenessInfo>()
             val ageCode = faceEngine.getAge(ageResult)
             val face3DAngleCode = faceEngine.getFace3DAngle(face3DAngleResult)
             val genderCode = faceEngine.getGender(genderInfoResult)
@@ -172,13 +173,13 @@ class AIFace private constructor(builder: Builder) {
      * @param model
      * @return
      */
-    fun detectPersons(model: FaceCameraModel?): MutableList<PersonModel>? {
+    fun detectPersons(model: FaceCameraModel?): List<PersonModel>? {
         if (!isInit || model == null) return null
         val faceResult = model.faceInfo
         if (faceResult.isNullOrEmpty()) {
             return null
         }
-        val code = faceEngine!!.process(model.nv21, model.width, model.height,
+        val code = faceEngine.process(model.nv21, model.width, model.height,
                 FaceConfig.CP_PAF_NV21,
                 faceResult,
                 (FaceConfig.ASF_AGE
@@ -188,11 +189,11 @@ class AIFace private constructor(builder: Builder) {
         val faceSize = faceResult.size
         logger.i("detectPersons faceSize：$faceSize")
         if (code == ErrorInfo.MOK) {
-            val faceFindModels = ArrayList<PersonModel>()
-            val ageResult = ArrayList<AgeInfo>()
-            val face3DAngleResult = ArrayList<Face3DAngle>()
-            val genderInfoResult = ArrayList<GenderInfo>()
-            val livenessInfoResult = ArrayList<LivenessInfo>()
+            val faceFindModels = mutableListOf<PersonModel>()
+            val ageResult = mutableListOf<AgeInfo>()
+            val face3DAngleResult = mutableListOf<Face3DAngle>()
+            val genderInfoResult = mutableListOf<GenderInfo>()
+            val livenessInfoResult = mutableListOf<LivenessInfo>()
             val ageCode = faceEngine.getAge(ageResult)
             val face3DAngleCode = faceEngine.getFace3DAngle(face3DAngleResult)
             val genderCode = faceEngine.getGender(genderInfoResult)
@@ -249,7 +250,7 @@ class AIFace private constructor(builder: Builder) {
      */
     fun detectPersonWithCamera(model: FaceCameraModel): PersonCameraModel? {
         val data = detectPersons(model)
-        return if (data.isNullOrEmpty()) null else PersonCameraModel(data, model)
+        return if (data.isNullOrEmpty()) null else PersonCameraModel(data, model.nv21, model.width, model.height)
     }
 
 
@@ -274,7 +275,7 @@ class AIFace private constructor(builder: Builder) {
      */
     fun findFeatureWithCamera(model: FaceCameraModel): FeatureCameraModel? {
         val data = findFaceFeature(model)
-        return if (data.isNullOrEmpty()) null else FeatureCameraModel(data, model)
+        return if (data.isNullOrEmpty()) null else FeatureCameraModel(data, model.nv21, model.width, model.height)
     }
 
     /**
@@ -287,7 +288,7 @@ class AIFace private constructor(builder: Builder) {
         if (!isInit || model == null) return null
         val begin = System.currentTimeMillis()
         val faceInfoList = model.faceInfo
-        if (faceInfoList != null && faceInfoList.size > 0) {
+        return if (faceInfoList.isNullOrEmpty()) null else {
             val faceFeatureList = mutableListOf<FeatureModel>()
             for (faceInfo in faceInfoList) {
                 val faceFindModel = findSingleFaceFeature(model, faceInfo)
@@ -296,9 +297,8 @@ class AIFace private constructor(builder: Builder) {
                 }
             }
             logger.i("findFaceFeature model time：" + (System.currentTimeMillis() - begin))
-            return faceFeatureList
+            faceFeatureList
         }
-        return null
     }
 
 
@@ -310,7 +310,7 @@ class AIFace private constructor(builder: Builder) {
      * @param height
      * @return
      */
-    fun findFaceFeature(nv21: ByteArray, width: Int, height: Int): MutableList<FeatureModel>? {
+    fun findFaceFeature(nv21: ByteArray, width: Int, height: Int): List<FeatureModel>? {
         if (!isInit) return null
         val begin = System.currentTimeMillis()
         val faceInfoList = detectFaces(nv21, width, height)
@@ -459,17 +459,4 @@ class AIFace private constructor(builder: Builder) {
         }
 
     }
-
-    companion object {
-        internal var logger: ILogger = DefaultLogger()
-
-        fun showLog(isShowLog: Boolean) {
-            logger.showLog(isShowLog)
-        }
-
-        fun showStackTrace(isShowStackTrace: Boolean) {
-            logger.showStackTrace(isShowStackTrace)
-        }
-    }
-
 }
