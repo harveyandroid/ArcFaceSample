@@ -5,7 +5,7 @@ import com.harvey.arcface.utils.FaceConfig
 /**
  * Created by hanhui on 2019/12/12 0012 17:07
  */
-enum class FaceAction private constructor(//需要启用的功能组合
+enum class FaceAction(//需要启用的功能组合
         var combinedMask: Int) {
     DETECT(FaceConfig.ASF_FACE_DETECT),
 
