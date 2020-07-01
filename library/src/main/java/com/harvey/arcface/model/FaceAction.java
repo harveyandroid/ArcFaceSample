@@ -1,31 +1,48 @@
 package com.harvey.arcface.model;
 
-import com.harvey.arcface.utils.FaceConfig;
+
+import com.arcsoft.face.FaceEngine;
 
 /**
  * Created by hanhui on 2019/12/12 0012 17:07
  */
 public enum FaceAction {
-    DETECT(FaceConfig.ASF_FACE_DETECT),
+    DETECT(FaceEngine.ASF_FACE_DETECT),
 
-    DEEP_DETECT(FaceConfig.ASF_FACE_DETECT
-            | FaceConfig.ASF_AGE
-            | FaceConfig.ASF_GENDER
-            | FaceConfig.ASF_FACE3DANGLE
-            | FaceConfig.ASF_LIVENESS),
+    FACE_PROPERTY(FaceEngine.ASF_AGE
+            | FaceEngine.ASF_GENDER
+            | FaceEngine.ASF_FACE3DANGLE
+            | FaceEngine.ASF_LIVENESS),
 
-    FEATURE_EXTRACT(FaceConfig.ASF_FACE_DETECT
-            | FaceConfig.ASF_FACE_RECOGNITION),
+    FACE_PROPERTY_WITH_IR(FaceEngine.ASF_AGE
+            | FaceEngine.ASF_GENDER
+            | FaceEngine.ASF_FACE3DANGLE
+            | FaceEngine.ASF_LIVENESS
+            | FaceEngine.ASF_IR_LIVENESS),
 
-    MATCH(FaceConfig.ASF_FACE_DETECT
-            | FaceConfig.ASF_FACE_RECOGNITION),
+    DETECT_FACE_PROPERTY(FaceEngine.ASF_FACE_DETECT
+            | FaceEngine.ASF_AGE
+            | FaceEngine.ASF_GENDER
+            | FaceEngine.ASF_FACE3DANGLE
+            | FaceEngine.ASF_LIVENESS),
 
-    ALL(FaceConfig.ASF_FACE_DETECT
-            | FaceConfig.ASF_FACE_RECOGNITION
-            | FaceConfig.ASF_AGE
-            | FaceConfig.ASF_GENDER
-            | FaceConfig.ASF_FACE3DANGLE
-            | FaceConfig.ASF_LIVENESS);
+    DETECT_FACE_PROPERTY_WITH_IR(FaceEngine.ASF_FACE_DETECT
+            | FaceEngine.ASF_AGE
+            | FaceEngine.ASF_GENDER
+            | FaceEngine.ASF_FACE3DANGLE
+            | FaceEngine.ASF_LIVENESS
+            | FaceEngine.ASF_IR_LIVENESS),
+
+    DETECT_FACE_FEATURE(FaceEngine.ASF_FACE_DETECT
+            | FaceEngine.ASF_FACE_RECOGNITION),
+
+
+    ALL_WITHOUT_IR(FaceEngine.ASF_FACE_DETECT
+            | FaceEngine.ASF_FACE_RECOGNITION
+            | FaceEngine.ASF_AGE
+            | FaceEngine.ASF_GENDER
+            | FaceEngine.ASF_FACE3DANGLE
+            | FaceEngine.ASF_LIVENESS);
 
     //需要启用的功能组合
     public int combinedMask;

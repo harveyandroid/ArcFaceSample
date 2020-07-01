@@ -13,7 +13,7 @@ afterEvaluate { project ->
                 pom.project {
                     pom.groupId = 'com.avatarcn.base'
                     pom.artifactId = "arcface"
-                    pom.version = "2.0.0"
+                    pom.version = "3.0.2"
                     pom.packaging = 'aar'
                 }
             }

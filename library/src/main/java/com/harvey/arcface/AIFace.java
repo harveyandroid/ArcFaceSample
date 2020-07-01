@@ -11,6 +11,8 @@ import com.arcsoft.face.FaceInfo;
 import com.arcsoft.face.FaceSimilar;
 import com.arcsoft.face.GenderInfo;
 import com.arcsoft.face.LivenessInfo;
+import com.arcsoft.face.enums.DetectFaceOrientPriority;
+import com.arcsoft.face.enums.DetectMode;
 import com.harvey.arcface.model.CameraModel;
 import com.harvey.arcface.model.FaceAction;
 import com.harvey.arcface.model.FaceCameraModel;
@@ -19,7 +21,6 @@ import com.harvey.arcface.model.FeatureModel;
 import com.harvey.arcface.model.PersonCameraModel;
 import com.harvey.arcface.model.PersonModel;
 import com.harvey.arcface.utils.DefaultLogger;
-import com.harvey.arcface.utils.FaceConfig;
 import com.harvey.arcface.utils.ILogger;
 
 import java.util.ArrayList;
@@ -29,15 +30,14 @@ import java.util.List;
 /**
  * Created by harvey on 2018/1/12.
  */
-
 public class AIFace {
     static ILogger logger = new DefaultLogger();
     //人脸检测角度
-    private int orientPriority;
+    private DetectFaceOrientPriority orientPriority;
     private FaceEngine faceEngine;
     private volatile boolean initSuccess = false;
     //检测模式
-    private long mode;
+    private DetectMode detectMode;
     //识别的最小人脸比例
     private int scaleVal;
     //引擎最多能检测出的人脸数
@@ -45,9 +45,13 @@ public class AIFace {
     //需要启用的功能组合
     private int combinedMask;
     private Context mContext;
+    private String appId;
+    private String sdkKey;
 
     private AIFace(Builder builder) {
-        mode = builder.mode;
+        appId = builder.appId;
+        sdkKey = builder.sdkKey;
+        detectMode = builder.mode;
         orientPriority = builder.orientPriority;
         scaleVal = builder.scaleVal;
         maxNum = builder.maxNum;
@@ -69,12 +73,12 @@ public class AIFace {
         if (initSuccess) return true;
         long begin = System.currentTimeMillis();
         initSuccess = false;
-        int code = faceEngine.activeOnline(mContext, FaceConfig.APP_ID, FaceConfig.SDK_KEY);
+        int code = FaceEngine.activeOnline(mContext, appId, sdkKey);
+        logger.i("activeOnline  code is  : " + code);
         if (code != ErrorInfo.MOK && code != ErrorInfo.MERR_ASF_ALREADY_ACTIVATED) {
-            logger.i(String.format("activeOnline fail error_code:%d", code));
             return false;
         }
-        code = faceEngine.init(mContext, mode, orientPriority, scaleVal, maxNum, combinedMask);
+        code = faceEngine.init(mContext, detectMode, orientPriority, scaleVal, maxNum, combinedMask);
         if (code != ErrorInfo.MOK) {
             logger.i(String.format("init fail error_code:%d", code));
             return false;
@@ -107,7 +111,7 @@ public class AIFace {
         if (!isInit()) return null;
         long begin = System.currentTimeMillis();
         List<FaceInfo> result = new ArrayList<>();
-        int code = faceEngine.detectFaces(nv21, width, height, FaceConfig.CP_PAF_NV21, result);
+        int code = faceEngine.detectFaces(nv21, width, height, FaceEngine.CP_PAF_NV21, result);
         if (code == ErrorInfo.MOK && result.size() > 0) {
             logger.i(String.format("detectFaces %d, time：%d", result.size(), (System.currentTimeMillis() - begin)));
             return result;
@@ -148,11 +152,8 @@ public class AIFace {
         if (faceResult == null || faceResult.size() == 0) {
             return null;
         }
-        int code = faceEngine.process(nv21, width, height, FaceConfig.CP_PAF_NV21, faceResult,
-                FaceConfig.ASF_AGE
-                        | FaceConfig.ASF_GENDER
-                        | FaceConfig.ASF_FACE3DANGLE
-                        | FaceConfig.ASF_LIVENESS);
+        int code = faceEngine.process(nv21, width, height, FaceEngine.CP_PAF_NV21, faceResult,
+                FaceAction.FACE_PROPERTY.combinedMask);
         int faceSize = faceResult.size();
         logger.i("detectPersons faceSize：" + faceSize);
         if (code == ErrorInfo.MOK) {
@@ -209,12 +210,9 @@ public class AIFace {
             return null;
         }
         int code = faceEngine.process(model.getNv21(), model.getWidth(), model.getHeight(),
-                FaceConfig.CP_PAF_NV21,
+                FaceEngine.CP_PAF_NV21,
                 faceResult,
-                FaceConfig.ASF_AGE
-                        | FaceConfig.ASF_GENDER
-                        | FaceConfig.ASF_FACE3DANGLE
-                        | FaceConfig.ASF_LIVENESS);
+                FaceAction.FACE_PROPERTY.combinedMask);
         int faceSize = faceResult.size();
         logger.i("detectPersons faceSize：" + faceSize);
         if (code == ErrorInfo.MOK) {
@@ -384,7 +382,7 @@ public class AIFace {
         if (!isInit()) return null;
         long begin = System.currentTimeMillis();
         FaceFeature result = new FaceFeature();
-        int code = faceEngine.extractFaceFeature(nv21, width, height, FaceConfig.CP_PAF_NV21, faceInfo, result);
+        int code = faceEngine.extractFaceFeature(nv21, width, height, FaceEngine.CP_PAF_NV21, faceInfo, result);
         if (code == ErrorInfo.MOK) {
             logger.i("findSingleFaceFeature time：" + (System.currentTimeMillis() - begin));
             return new FeatureModel(width, height, faceInfo, result);
@@ -405,7 +403,7 @@ public class AIFace {
         if (!isInit() || model == null) return null;
         long begin = System.currentTimeMillis();
         FaceFeature result = new FaceFeature();
-        int code = faceEngine.extractFaceFeature(model.getNv21(), model.getWidth(), model.getHeight(), FaceConfig.CP_PAF_NV21, faceInfo, result);
+        int code = faceEngine.extractFaceFeature(model.getNv21(), model.getWidth(), model.getHeight(), FaceEngine.CP_PAF_NV21, faceInfo, result);
         if (code == ErrorInfo.MOK) {
             logger.i("findSingleFaceFeature time：" + (System.currentTimeMillis() - begin));
             return new FeatureModel(model.getWidth(), model.getHeight(), faceInfo, result);
@@ -448,32 +446,47 @@ public class AIFace {
 
     public static final class Builder {
         //检测模式
-        long mode;
+        DetectMode mode;
         //人脸检测角度
-        int orientPriority;
+        DetectFaceOrientPriority orientPriority;
         //识别的最小人脸比例
         int scaleVal;
         //引擎最多能检测出的人脸数
         int maxNum;
+        String appId;
+        String sdkKey;
         Context context;
         //需要启用的功能组合
         int combinedMask;
 
         public Builder(Context context) {
             this.context = context;
-            this.mode = FaceConfig.ASF_DETECT_MODE_VIDEO;
-            this.orientPriority = FaceConfig.ASF_OP_0_HIGHER_EXT;
+            this.mode = DetectMode.ASF_DETECT_MODE_VIDEO;
+            this.orientPriority = DetectFaceOrientPriority.ASF_OP_ALL_OUT;
             this.scaleVal = 16;
             this.maxNum = 25;
             this.combinedMask = FaceAction.DETECT.combinedMask;
+            //企业认证的key
+            this.appId = "CqqrPnuUjFhp4E8x3tK4ENZ5kwQEgPTs5oj46bsSLE7d";
+            this.sdkKey = "3Whu47h1z2tPtMwGVfKxZ82TLKSKVvCS7pL2AKEAez3n";
         }
 
-        public Builder mode(long mode) {
+        public Builder appId(String appId) {
+            this.appId = appId;
+            return this;
+        }
+
+        public Builder sdkKey(String sdkKey) {
+            this.sdkKey = sdkKey;
+            return this;
+        }
+
+        public Builder mode(DetectMode mode) {
             this.mode = mode;
             return this;
         }
 
-        public Builder orientPriority(int orientPriority) {
+        public Builder orientPriority(DetectFaceOrientPriority orientPriority) {
             this.orientPriority = orientPriority;
             return this;
         }
