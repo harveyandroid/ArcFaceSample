@@ -33,7 +33,7 @@ import java.util.List;
 public class AIFace {
     static ILogger logger = new DefaultLogger();
     //人脸检测角度
-    int orientPriority;
+    private int orientPriority;
     private FaceEngine faceEngine;
     private volatile boolean initSuccess = false;
     //检测模式
@@ -459,12 +459,13 @@ public class AIFace {
         //需要启用的功能组合
         int combinedMask;
 
-        public Builder() {
-            mode = FaceConfig.ASF_DETECT_MODE_VIDEO;
-            orientPriority = FaceConfig.ASF_OP_0_HIGHER_EXT;
-            scaleVal = 16;
-            maxNum = 25;
-            combinedMask = FaceAction.DETECT.combinedMask;
+        public Builder(Context context) {
+            this.context = context;
+            this.mode = FaceConfig.ASF_DETECT_MODE_VIDEO;
+            this.orientPriority = FaceConfig.ASF_OP_0_HIGHER_EXT;
+            this.scaleVal = 16;
+            this.maxNum = 25;
+            this.combinedMask = FaceAction.DETECT.combinedMask;
         }
 
         public Builder mode(long mode) {
@@ -484,11 +485,6 @@ public class AIFace {
 
         public Builder maxNum(int maxNum) {
             this.maxNum = maxNum;
-            return this;
-        }
-
-        public Builder context(Context context) {
-            this.context = context;
             return this;
         }
 

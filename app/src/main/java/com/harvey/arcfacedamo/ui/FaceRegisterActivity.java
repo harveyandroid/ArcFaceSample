@@ -19,13 +19,13 @@ import android.widget.RadioGroup;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.arcsoft.face.FaceInfo;
 import com.guo.android_extend.widget.ExtImageView;
 import com.harvey.arcface.AIFace;
-import com.harvey.arcface.moodel.FaceFindModel;
+import com.harvey.arcface.model.FeatureModel;
 import com.harvey.arcface.utils.FaceUtils;
 import com.harvey.arcface.view.SurfaceViewCamera;
 import com.harvey.arcfacedamo.R;
+import com.harvey.arcfacedamo.utils.FaceMatchHelper;
 import com.harvey.arcfacedamo.utils.ToastUtil;
 
 import java.util.List;
@@ -49,6 +49,7 @@ public class FaceRegisterActivity extends AppCompatActivity
     String faceSex;
     AlertDialog registerDialog;
     AIFace mAiFace;
+    FaceMatchHelper faceRegisterHelper;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -98,6 +99,7 @@ public class FaceRegisterActivity extends AppCompatActivity
 
     protected void initData() {
         mAiFace = new AIFace.Builder().context(this).build();
+        faceRegisterHelper = new FaceMatchHelper(this, mAiFace);
         AIFace.showLog(true);
         surfaceViewCamera.setCameraCallBack(this);
 //        surfaceViewSaveFace.uploadTimeSecondDown(1);
@@ -125,7 +127,7 @@ public class FaceRegisterActivity extends AppCompatActivity
 
     }
 
-    public void showSaveFaceDialog(final FaceFindModel faceModel, final byte[] data) {
+    public void showSaveFaceDialog(final FeatureModel faceModel, final byte[] data) {
         if (registerDialog != null && registerDialog.isShowing()) {
             registerDialog.dismiss();
         }
@@ -159,7 +161,7 @@ public class FaceRegisterActivity extends AppCompatActivity
                 } else if (TextUtils.isEmpty(faceSex)) {
                     ToastUtil.showToast(FaceRegisterActivity.this, "请选择性别！");
                 } else {
-                    boolean result = mAiFace.registerNv21(data, faceModel, faceName,
+                    boolean result = faceRegisterHelper.registerNv21(data, faceModel, faceName,
                             Integer.valueOf(faceAge), faceSex, getApplication().getExternalCacheDir().getPath());
                     if (result)
                         ToastUtil.showToast(FaceRegisterActivity.this, "注册人脸成功！");
@@ -183,7 +185,8 @@ public class FaceRegisterActivity extends AppCompatActivity
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
         Camera.Size size = camera.getParameters().getPreviewSize();
-        List<FaceInfo> faceInfos = mAiFace.detectFaces(data, size.width, size.height);
+        List<FeatureModel> faceFindModels = mAiFace.extractAllFaceFeature(data, size.width, size.height);
+//        surfaceViewSaveFace.uploadFace(faceFindModels, data);
     }
 
     @Override

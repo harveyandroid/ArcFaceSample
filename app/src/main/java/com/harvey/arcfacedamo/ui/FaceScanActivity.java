@@ -15,12 +15,13 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.harvey.arcface.AIFace;
-import com.harvey.arcface.moodel.FaceFindMatchModel;
-import com.harvey.arcface.moodel.FaceFindModel;
+import com.harvey.arcfacedamo.utils.FaceFindMatchModel;
+import com.harvey.arcface.model.FeatureModel;
 import com.harvey.arcface.view.SurfaceViewCamera;
 import com.harvey.arcface.view.SurfaceViewFace;
 import com.harvey.arcfacedamo.R;
 import com.harvey.arcfacedamo.adapter.MatchFaceAdapter;
+import com.harvey.arcfacedamo.utils.FaceMatchHelper;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +50,7 @@ public class FaceScanActivity extends AppCompatActivity
         }
     });
     AIFace mAiFace;
+    FaceMatchHelper faceMatchHelper;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -77,6 +79,7 @@ public class FaceScanActivity extends AppCompatActivity
 
     protected void initData() {
         mAiFace = new AIFace.Builder().context(this).build();
+        faceMatchHelper = new FaceMatchHelper(this, mAiFace);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setSmoothScrollbarEnabled(true);
         layoutManager.setAutoMeasureEnabled(true);
@@ -104,11 +107,11 @@ public class FaceScanActivity extends AppCompatActivity
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
         Camera.Size size = camera.getParameters().getPreviewSize();
-        List<FaceFindModel> faceFindModels = mAiFace.extractAllFaceFeature(data, size.width, size.height);
+        List<FeatureModel> faceFindModels = mAiFace.extractAllFaceFeature(data, size.width, size.height);
         surfaceViewFace.updateFace(faceFindModels);
         if (faceFindModels != null && faceFindModels.size() > 0) {
-            for (FaceFindModel faceFindModel : faceFindModels) {
-                FaceFindMatchModel faceFindMatchModel = mAiFace.matchFace(faceFindModel.getFaceFeature());
+            for (FeatureModel faceFindModel : faceFindModels) {
+                FaceFindMatchModel faceFindMatchModel = faceMatchHelper.matchFace(faceFindModel.getFaceFeature());
                 boolean isExist = false;
                 int existPosition = 0;
                 List<FaceFindMatchModel> models = matchFaceAdapter.getData();

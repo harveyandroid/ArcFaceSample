@@ -5,7 +5,7 @@ import android.widget.ImageView;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
 import com.harvey.arcfacedamo.R;
-import com.harvey.arcface.moodel.FaceFindMatchModel;
+import com.harvey.arcfacedamo.utils.FaceFindMatchModel;
 import com.harvey.image.ImageLoader;
 
 /**

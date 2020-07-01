@@ -27,8 +27,8 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.RadioGroup;
 
-import com.harvey.arcface.moodel.FaceFindCameraModel;
-import com.harvey.arcface.moodel.FaceFindModel;
+import com.harvey.arcface.model.FaceFindCameraModel;
+import com.harvey.arcface.model.FeatureModel;
 import com.harvey.arcfacedamo.R;
 import com.harvey.arcfacedamo.utils.DialogUtil;
 import com.harvey.arcfacedamo.utils.DisplayUtils;
@@ -217,7 +217,7 @@ public class SurfaceViewScanFace extends SurfaceView implements SurfaceHolder.Ca
         surfaceStop = true;
     }
 
-    public void showEditDialog(final FaceFindModel faceFindModel, final byte[] data) {
+    public void showEditDialog(final FeatureModel faceFindModel, final byte[] data) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         View view = LayoutInflater.from(getContext()).inflate(R.layout.dialog_input_face_info, null);
         final EditText etName = view.findViewById(R.id.et_name);
@@ -255,7 +255,7 @@ public class SurfaceViewScanFace extends SurfaceView implements SurfaceHolder.Ca
     }
 
     // 绘制人脸
-    private void drawFaceImg(Canvas canvas, FaceFindModel faceFindModel, byte[] data) {
+    private void drawFaceImg(Canvas canvas, FeatureModel faceFindModel, byte[] data) {
         YuvImage yuv = new YuvImage(data, ImageFormat.NV21, faceFindModel.getCameraWidth(),
                 faceFindModel.getCameraHeight(), null);
         ByteArrayOutputStream ops = new ByteArrayOutputStream();

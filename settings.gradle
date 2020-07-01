@@ -1,3 +1,5 @@
-include ':app'
+//include ':app'
 include ':library'
-//, ':kotlin-library', ':kotlin-app', ':ArcfaceDemo'
+include ':kotlin-library'
+//, ':kotlin-app', ':ArcfaceDemo'
+//include ':ArcfaceDemo'
