@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 一个Camera摄像头包含的所有人脸信息
+ * 摄像头一帧包含的所有人脸信息
  * Created by hanhui on 2019/12/12 0012 16:43
  */
 public class FaceCameraModel extends CameraModel {

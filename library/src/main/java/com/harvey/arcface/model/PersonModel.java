@@ -1,133 +1,78 @@
 package com.harvey.arcface.model;
 
-import android.graphics.Rect;
+import com.arcsoft.face.AgeInfo;
+import com.arcsoft.face.Face3DAngle;
+import com.arcsoft.face.FaceInfo;
+import com.arcsoft.face.GenderInfo;
+import com.arcsoft.face.LivenessInfo;
 
 public class PersonModel {
-    //人脸信息
-    Rect rect;
-    int orient;
-    int faceId = -1;
-    int age;
-    int gender;
-    float yaw;
-    float roll;
-    float pitch;
-    int status;
-    int liveness;
+    FaceInfo faceInfo;
+    AgeInfo ageInfo;
+    Face3DAngle face3DAngle;
+    GenderInfo genderInfo;
+    LivenessInfo livenessInfo;
+
+    public PersonModel(FaceInfo faceInfo, AgeInfo ageInfo, Face3DAngle face3DAngle, GenderInfo genderInfo, LivenessInfo livenessInfo) {
+        this.faceInfo = faceInfo;
+        this.ageInfo = ageInfo;
+        this.face3DAngle = face3DAngle;
+        this.genderInfo = genderInfo;
+        this.livenessInfo = livenessInfo;
+    }
 
     public PersonModel() {
     }
 
     public PersonModel(PersonModel model) {
-        this.rect = new Rect(model.rect);
-        this.orient = model.orient;
-        this.faceId = model.faceId;
-        this.age = model.age;
-        this.gender = model.gender;
-        this.yaw = model.yaw;
-        this.roll = model.roll;
-        this.pitch = model.pitch;
-        this.status = model.status;
-        this.liveness = model.liveness;
+        faceInfo = model.faceInfo.clone();
+        ageInfo = model.ageInfo;
+        face3DAngle = model.face3DAngle;
+        genderInfo = model.genderInfo;
+        livenessInfo = model.livenessInfo;
     }
 
-    public Rect getRect() {
-        return rect;
+    public FaceInfo getFaceInfo() {
+        return faceInfo;
     }
 
-    public void setRect(Rect rect) {
-        this.rect = rect;
+    public void setFaceInfo(FaceInfo faceInfo) {
+        this.faceInfo = faceInfo;
     }
 
-    public int getOrient() {
-        return orient;
+    public AgeInfo getAgeInfo() {
+        return ageInfo;
     }
 
-    public void setOrient(int orient) {
-        this.orient = orient;
+    public void setAgeInfo(AgeInfo ageInfo) {
+        this.ageInfo = ageInfo;
     }
 
-    public int getFaceId() {
-        return faceId;
+    public Face3DAngle getFace3DAngle() {
+        return face3DAngle;
     }
 
-    public void setFaceId(int faceId) {
-        this.faceId = faceId;
+    public void setFace3DAngle(Face3DAngle face3DAngle) {
+        this.face3DAngle = face3DAngle;
     }
 
-    public int getAge() {
-        return age;
+    public GenderInfo getGenderInfo() {
+        return genderInfo;
     }
 
-    public void setAge(int age) {
-        this.age = age;
+    public void setGenderInfo(GenderInfo genderInfo) {
+        this.genderInfo = genderInfo;
     }
 
-    public int getGender() {
-        return gender;
+    public LivenessInfo getLivenessInfo() {
+        return livenessInfo;
     }
 
-    public void setGender(int gender) {
-        this.gender = gender;
-    }
-
-    public float getYaw() {
-        return yaw;
-    }
-
-    public void setYaw(float yaw) {
-        this.yaw = yaw;
-    }
-
-    public float getRoll() {
-        return roll;
-    }
-
-    public void setRoll(float roll) {
-        this.roll = roll;
-    }
-
-    public float getPitch() {
-        return pitch;
-    }
-
-    public void setPitch(float pitch) {
-        this.pitch = pitch;
-    }
-
-    public int getStatus() {
-        return status;
-    }
-
-    public void setStatus(int status) {
-        this.status = status;
-    }
-
-    public int getLiveness() {
-        return liveness;
-    }
-
-    public void setLiveness(int liveness) {
-        this.liveness = liveness;
+    public void setLivenessInfo(LivenessInfo livenessInfo) {
+        this.livenessInfo = livenessInfo;
     }
 
     public PersonModel clone() {
         return new PersonModel(this);
-    }
-
-    @Override
-    public String toString() {
-        return "FaceFindPersonModel{" +
-                "rect=" + rect +
-                ", orient=" + orient +
-                ", faceId=" + faceId +
-                ", age=" + age +
-                ", gender=" + gender +
-                ", yaw=" + yaw +
-                ", roll=" + roll +
-                ", pitch=" + pitch +
-                ", status=" + status +
-                ", liveness=" + liveness +
-                '}';
     }
 }

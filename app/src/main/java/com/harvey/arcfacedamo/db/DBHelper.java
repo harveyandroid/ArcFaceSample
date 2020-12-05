@@ -24,24 +24,10 @@ public class DBHelper {
 
 
     public DBHelper(Context context) {
-        if (daoMaster == null) {
-            OwnerOpenHelper helper = new OwnerOpenHelper(context.getApplicationContext(), DATABASE_NAME, null);
-            daoMaster = new DaoMaster(helper.getWritableDatabase());
-        }
+        OwnerOpenHelper helper = new OwnerOpenHelper(context.getApplicationContext(), DATABASE_NAME, null);
+        daoMaster = new DaoMaster(helper.getWritableDatabase());
         daoSession = daoMaster.newSession();
-    }
-
-
-    /**
-     * 需要全局初始化
-     *
-     * @param context
-     * @return
-     */
-    public DBHelper init(Context context) {
-        if (registeredFaceDao == null)
-            registeredFaceDao = daoSession.getFaceRegisterDao();
-        return this;
+        registeredFaceDao = daoSession.getFaceRegisterDao();
     }
 
     /**

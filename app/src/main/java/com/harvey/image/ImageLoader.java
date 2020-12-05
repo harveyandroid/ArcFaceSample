@@ -15,12 +15,6 @@ import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.target.ViewTarget;
 
-/**
- * @version v1.0
- * @author：Administrator
- * @email：1034398675@qq.com
- * @date: 2016/6/3 0003
- */
 public class ImageLoader {
 
     public static void displayImage(Context context, Object resource, ImageView imageView) {

@@ -21,7 +21,6 @@ import java.util.List;
  */
 
 public class SurfaceViewCamera extends SurfaceView implements SurfaceHolder.Callback {
-
     public int cameraWidth = 1280;
     public int cameraHeight = 720;
     int currentCameraId = Camera.CameraInfo.CAMERA_FACING_BACK;
@@ -126,6 +125,9 @@ public class SurfaceViewCamera extends SurfaceView implements SurfaceHolder.Call
     }
 
     public int getCameraDisplayOrientation() {
+        if (true) {
+            return 270;
+        }
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
         Camera.getCameraInfo(currentCameraId, cameraInfo);
         WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
@@ -160,14 +162,17 @@ public class SurfaceViewCamera extends SurfaceView implements SurfaceHolder.Call
     @Override
     public void surfaceCreated(SurfaceHolder mSurfaceHolder) {
         openCamera();
+        Log.i("SurfaceViewCamera", "surfaceCreated");
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
+        Log.i("SurfaceViewCamera", String.format("surfaceChanged :%d,%d,%d ", i, i1, i2));
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
         closeCamera();
+        Log.i("SurfaceViewCamera", "surfaceDestroyed");
     }
 }

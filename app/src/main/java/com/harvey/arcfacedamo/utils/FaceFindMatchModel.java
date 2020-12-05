@@ -1,6 +1,7 @@
 package com.harvey.arcfacedamo.utils;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 
 /**
@@ -68,5 +69,23 @@ public class FaceFindMatchModel implements Serializable {
 
     public void setScore(float score) {
         this.score = score;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof FaceFindMatchModel)) return false;
+        FaceFindMatchModel that = (FaceFindMatchModel) o;
+        return getPersonId() == that.getPersonId() &&
+                isMatching() == that.isMatching() &&
+                Float.compare(that.getScore(), getScore()) == 0 &&
+                Objects.equals(getName(), that.getName()) &&
+                Objects.equals(getGender(), that.getGender()) &&
+                Objects.equals(getImagePath(), that.getImagePath());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getPersonId(), isMatching(), getName(), getGender(), getScore(), getImagePath());
     }
 }

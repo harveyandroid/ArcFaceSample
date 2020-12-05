@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * 摄像头一帧包含的所有人脸特征信息
  * Created by hanhui on 2019/12/12 0012 16:50
  */
 public class FeatureCameraModel extends CameraModel {

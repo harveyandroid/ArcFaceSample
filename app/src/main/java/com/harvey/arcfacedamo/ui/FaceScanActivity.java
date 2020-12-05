@@ -15,12 +15,16 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.harvey.arcface.AIFace;
-import com.harvey.arcfacedamo.utils.FaceFindMatchModel;
+import com.harvey.arcface.FaceMatchThread;
+import com.harvey.arcface.model.FaceAction;
+import com.harvey.arcface.model.FaceCameraModel;
 import com.harvey.arcface.model.FeatureModel;
 import com.harvey.arcface.view.SurfaceViewCamera;
 import com.harvey.arcface.view.SurfaceViewFace;
+import com.harvey.arcfacedamo.BuildConfig;
 import com.harvey.arcfacedamo.R;
 import com.harvey.arcfacedamo.adapter.MatchFaceAdapter;
+import com.harvey.arcfacedamo.utils.FaceFindMatchModel;
 import com.harvey.arcfacedamo.utils.FaceMatchHelper;
 
 import java.util.List;
@@ -33,7 +37,8 @@ import java.util.concurrent.TimeUnit;
 public class FaceScanActivity extends AppCompatActivity
         implements
         Camera.PreviewCallback {
-    final int FINISH_SHOW_WHAT = 1;
+    public static final int ADD_MATCH_FACE_WHAT = 2;
+    public static final int FINISH_SHOW_WHAT = 1;
     SurfaceViewFace surfaceViewFace;
     SurfaceViewCamera surfaceViewCamera;
     RecyclerView faceList;
@@ -45,12 +50,39 @@ public class FaceScanActivity extends AppCompatActivity
                 case FINISH_SHOW_WHAT:
                     matchFaceAdapter.setNewData(null);
                     break;
+                case ADD_MATCH_FACE_WHAT:
+                    FaceFindMatchModel matchModel = (FaceFindMatchModel) msg.obj;
+                    if (matchModel != null) {
+                        boolean isExist = false;
+                        int updatePosition = -1;
+                        List<FaceFindMatchModel> models = matchFaceAdapter.getData();
+                        for (int i = 0; i < models.size(); i++) {
+                            FaceFindMatchModel item = models.get(i);
+                            if (item.getPersonId() == matchModel.getPersonId()) {
+                                if (!item.equals(matchModel)) {
+                                    updatePosition = i;
+                                }
+                                isExist = true;
+                                break;
+                            }
+                        }
+                        if (!isExist) {
+                            matchFaceAdapter.addData(matchModel);
+                        }
+                        if (updatePosition != -1) {
+                            matchFaceAdapter.setData(updatePosition, matchModel);
+                        }
+                        mHandler.removeMessages(FINISH_SHOW_WHAT);
+                        mHandler.sendEmptyMessageDelayed(FINISH_SHOW_WHAT, TimeUnit.SECONDS.toMillis(5));
+                    }
+                    break;
             }
             return false;
         }
     });
     AIFace mAiFace;
-    FaceMatchHelper faceMatchHelper;
+    FaceMatchThread faceMatchThread;
+    FaceMatchHelper matchHelper;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -78,8 +110,25 @@ public class FaceScanActivity extends AppCompatActivity
     }
 
     protected void initData() {
-        mAiFace = new AIFace.Builder().context(this).build();
-        faceMatchHelper = new FaceMatchHelper(this, mAiFace);
+        AIFace.showLog(BuildConfig.DEBUG);
+        mAiFace = new AIFace
+                .Builder(this)
+                .combinedMask(FaceAction.DETECT_FACE_FEATURE)
+                .orientPriority(surfaceViewCamera.getCameraDisplayOrientation())
+                .build();
+        matchHelper = new FaceMatchHelper(this, mAiFace);
+        faceMatchThread = new FaceMatchThread(mAiFace) {
+
+            @Override
+            protected void handleMatch(FeatureModel featureModel) {
+                FaceFindMatchModel faceFindMatchModel = matchHelper.matchFace(featureModel.getFaceFeature());
+                if (faceFindMatchModel != null) {
+                    Message message = mHandler.obtainMessage(FaceScanActivity.ADD_MATCH_FACE_WHAT, faceFindMatchModel);
+                    mHandler.sendMessage(message);
+                }
+            }
+        };
+        faceMatchThread.start();
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setSmoothScrollbarEnabled(true);
         layoutManager.setAutoMeasureEnabled(true);
@@ -90,6 +139,7 @@ public class FaceScanActivity extends AppCompatActivity
         faceList.setNestedScrollingEnabled(false);
         surfaceViewCamera.setCameraCallBack(this);
         surfaceViewFace.setDisplayOrientation(surfaceViewCamera.getCameraDisplayOrientation());
+        surfaceViewFace.setFrontCamera(surfaceViewCamera.isFront());
     }
 
     public void switchCamera(View view) {
@@ -101,37 +151,15 @@ public class FaceScanActivity extends AppCompatActivity
     protected void onDestroy() {
         super.onDestroy();
         mAiFace.destroy();
+        faceMatchThread.finish();
         mHandler.removeMessages(FINISH_SHOW_WHAT);
     }
 
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
         Camera.Size size = camera.getParameters().getPreviewSize();
-        List<FeatureModel> faceFindModels = mAiFace.extractAllFaceFeature(data, size.width, size.height);
-        surfaceViewFace.updateFace(faceFindModels);
-        if (faceFindModels != null && faceFindModels.size() > 0) {
-            for (FeatureModel faceFindModel : faceFindModels) {
-                FaceFindMatchModel faceFindMatchModel = faceMatchHelper.matchFace(faceFindModel.getFaceFeature());
-                boolean isExist = false;
-                int existPosition = 0;
-                List<FaceFindMatchModel> models = matchFaceAdapter.getData();
-                for (int i = 0; i < models.size(); i++) {
-                    if (models.get(i).getName().equals(faceFindMatchModel.getName())) {
-                        existPosition = i;
-                        isExist = true;
-                        break;
-                    }
-                }
-                if (!isExist) {
-                    matchFaceAdapter.addData(faceFindMatchModel);
-                } else {
-                    matchFaceAdapter.setData(existPosition, faceFindMatchModel);
-                }
-                mHandler.removeMessages(FINISH_SHOW_WHAT);
-                mHandler.sendEmptyMessageDelayed(FINISH_SHOW_WHAT, TimeUnit.SECONDS.toMillis(5));
-            }
-
-        }
+        FaceCameraModel faceCameraModel = mAiFace.detectFaceWithCamera(data, size.width, size.height);
+        surfaceViewFace.updateFace(faceCameraModel);
+        faceMatchThread.offerFaceCameraModel(faceCameraModel);
     }
-
 }

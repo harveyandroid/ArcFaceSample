@@ -15,15 +15,18 @@ import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.arcsoft.face.FaceInfo;
 import com.harvey.arcface.R;
-import com.harvey.arcface.model.FeatureModel;
+import com.harvey.arcface.model.FaceCameraModel;
+import com.harvey.arcface.utils.FaceUtils;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callback {
-
-    Thread thread;
+    public int cameraWidth = 1280;
+    public int cameraHeight = 720;
+    private Thread thread;
     private SurfaceHolder surfaceHolder;
     private boolean surfaceRun = false;
     private volatile boolean surfaceStop = false;
@@ -34,7 +37,7 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
     private int surfaceWidth;
     private int surfaceHeight;
     // 人脸数据列表
-    private List<FeatureModel> faceFindModels;
+    private List<FaceInfo> faceInfoList;
     private boolean frontCamera = true;//默认前置
     private int displayOrientation = 0;
     private Paint rectPaint;
@@ -51,28 +54,25 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
                     Canvas canvas = surfaceHolder.lockCanvas();
                     if (canvas != null) {
                         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-                        for (FeatureModel faceFindModel : faceFindModels) {
-                            drawFaceRect(canvas, faceFindModel);
-                            drawFindFace(canvas, faceFindModel);
+                        for (FaceInfo faceInfo : faceInfoList) {
+                            drawFaceRect(canvas, faceInfo);
+                            drawFindFace(canvas, faceInfo);
                         }
                         drawRotate += 15;
                         drawRotateFind += 5;
                         surfaceHolder.unlockCanvasAndPost(canvas);
                     }
                 }
-                try {
-                    Thread.sleep(sleepCount);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
             }
         }
 
-        private void drawFaceRect(Canvas canvas, FeatureModel model) {
-            canvas.drawRect(model.adjustRect(displayOrientation, frontCamera, surfaceWidth, surfaceHeight), rectPaint);
+        private void drawFaceRect(Canvas canvas, FaceInfo faceInfo) {
+            Rect mapRect = FaceUtils.adjustRect(faceInfo.getRect(), cameraWidth, cameraHeight,
+                    displayOrientation, frontCamera, surfaceWidth, surfaceHeight);
+            canvas.drawRect(mapRect, rectPaint);
         }
 
-        private void drawFindFace(Canvas canvas, FeatureModel model) {
+        private void drawFindFace(Canvas canvas, FaceInfo model) {
             Matrix matrix = new Matrix();
             Matrix matrix2 = new Matrix();
 
@@ -83,12 +83,13 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
             matrix2.postRotate(360 - drawRotate * 2);// 步骤2
 
             float scaleWidth = ((float) model.getRect().width() * (float) surfaceWidth
-                    / (float) model.getCameraWidth()) / scan1.getWidth();
+                    / (float) cameraWidth) / scan1.getWidth();
 
             matrix.postScale(scaleWidth, scaleWidth);
             matrix2.postScale(scaleWidth, scaleWidth);
             // 中心点计算
-            Rect mapRect = model.adjustRect(displayOrientation, frontCamera, surfaceWidth, surfaceHeight);
+            Rect mapRect = FaceUtils.adjustRect(model.getRect(), cameraWidth, cameraHeight,
+                    displayOrientation, frontCamera, surfaceWidth, surfaceHeight);
             int centerX = mapRect.centerX();
             int centerY = mapRect.centerY();
             matrix.postTranslate(centerX, centerY);// 步骤3 屏幕的中心点
@@ -106,7 +107,7 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
         surfaceHolder.addCallback(this);
         // 透明背景
         surfaceHolder.setFormat(PixelFormat.TRANSPARENT);
-        faceFindModels = new CopyOnWriteArrayList<>();
+        faceInfoList = new CopyOnWriteArrayList<>();
 
         rectPaint = new Paint();
         rectPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
@@ -116,13 +117,15 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
     }
 
     // 更新人脸列表
-    public void updateFace(List<FeatureModel> faceFindModels) {
+    public void updateFace(FaceCameraModel model) {
         surfaceStop = false;
-        if (faceFindModels != null && faceFindModels.size() > 0) {
-            this.faceFindModels.clear();
-            this.faceFindModels.addAll(faceFindModels);
-        }else {
-            this.faceFindModels.clear();
+        if (model != null) {
+            cameraHeight = model.getHeight();
+            cameraWidth = model.getWidth();
+            this.faceInfoList.clear();
+            this.faceInfoList.addAll(model.getFaceInfo());
+        } else {
+            this.faceInfoList.clear();
         }
     }
 

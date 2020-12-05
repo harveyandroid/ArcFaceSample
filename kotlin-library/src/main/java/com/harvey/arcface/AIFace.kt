@@ -48,7 +48,7 @@ class AIFace private constructor(builder: Builder) {
         if (isInit) return true
         val begin = System.currentTimeMillis()
         isInit = false
-        var code = faceEngine.activeOnline(mContext, FaceConfig.APP_ID, FaceConfig.SDK_KEY)
+        var code = FaceEngine.activeOnline(mContext, FaceConfig.APP_ID, FaceConfig.SDK_KEY)
         if (code != ErrorInfo.MOK && code != ErrorInfo.MERR_ASF_ALREADY_ACTIVATED) {
             logger.i(String.format("activeOnline fail error_code:%d", code))
             return false

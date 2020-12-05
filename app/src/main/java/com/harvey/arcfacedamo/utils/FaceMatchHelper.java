@@ -1,6 +1,7 @@
 package com.harvey.arcfacedamo.utils;
 
 import android.content.Context;
+import android.util.Log;
 
 import androidx.collection.ArraySet;
 
@@ -8,6 +9,7 @@ import com.arcsoft.face.FaceFeature;
 import com.arcsoft.face.FaceInfo;
 import com.arcsoft.face.FaceSimilar;
 import com.harvey.arcface.AIFace;
+import com.harvey.arcface.model.CameraModel;
 import com.harvey.arcface.model.FeatureModel;
 import com.harvey.arcface.utils.DefaultLogger;
 import com.harvey.arcface.utils.FaceUtils;
@@ -27,7 +29,7 @@ public class FaceMatchHelper {
     final private DBHelper dbHelper;
     private Set<FaceRegister> registeredFaces;
     private AIFace mAiFace;
-    private float score = 0.75f;
+    private float score = 0.8f;
 
     public FaceMatchHelper(Context context, AIFace aiFace) {
         dbHelper = new DBHelper(context);
@@ -124,20 +126,17 @@ public class FaceMatchHelper {
     }
 
     // 获取人脸特征码并存储人脸图片到本地
-    public boolean registerNv21(byte[] nv21, FeatureModel model, String name, int age, String sex, String dir) {
+    public boolean registerNv21(FaceInfo faceInfo, CameraModel cameraModel, String name, int age, String sex, String dir) {
         try {
-            byte[] featureData = model.getFeatureData();
-            if (featureData == null || featureData.length != FaceFeature.FEATURE_SIZE) {
-                FeatureModel faceFindModel = mAiFace.findSingleFaceFeature(nv21, model.getCameraWidth(), model.getCameraHeight(), model.getFaceInfo());
-                if (faceFindModel == null) {
-                    return false;
-                } else {
-                    featureData = faceFindModel.getFeatureData();
-                }
+            Log.e("harvey", String.format("registerNv21-->FaceInfo:%d,Nv21:%s", faceInfo.hashCode(), cameraModel.getNv21()));
+            FeatureModel faceFindModel = mAiFace.findSingleFaceFeature(cameraModel, faceInfo);
+            if (faceFindModel == null) {
+                return false;
             }
+            byte[] featureData = faceFindModel.getFaceFeature().getFeatureData();
             String userName = name == null ? String.valueOf(System.currentTimeMillis()) : name;
             String imgFile = dir + File.separator + userName + ".jpg";
-            FaceUtils.saveFaceImage(imgFile, model, nv21);
+            FaceUtils.saveFaceImage(imgFile, faceInfo, cameraModel);
             FaceRegister registeredFace = new FaceRegister();
             registeredFace.setAge(age);
             registeredFace.setGender(sex);

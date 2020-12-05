@@ -2,6 +2,7 @@ package com.harvey.arcface;
 
 import android.content.Context;
 
+import com.arcsoft.face.ActiveFileInfo;
 import com.arcsoft.face.AgeInfo;
 import com.arcsoft.face.ErrorInfo;
 import com.arcsoft.face.Face3DAngle;
@@ -18,13 +19,20 @@ import com.harvey.arcface.model.FaceAction;
 import com.harvey.arcface.model.FaceCameraModel;
 import com.harvey.arcface.model.FeatureCameraModel;
 import com.harvey.arcface.model.FeatureModel;
+import com.harvey.arcface.model.OneFaceCameraModel;
+import com.harvey.arcface.model.OneFeatureCameraModel;
 import com.harvey.arcface.model.PersonCameraModel;
 import com.harvey.arcface.model.PersonModel;
+import com.harvey.arcface.model.ProcessState;
 import com.harvey.arcface.utils.DefaultLogger;
 import com.harvey.arcface.utils.ILogger;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 
 /**
@@ -32,21 +40,20 @@ import java.util.List;
  */
 public class AIFace {
     static ILogger logger = new DefaultLogger();
-    //人脸检测角度
-    private DetectFaceOrientPriority orientPriority;
     private FaceEngine faceEngine;
     private volatile boolean initSuccess = false;
-    //检测模式
+    private DetectFaceOrientPriority orientPriority;
     private DetectMode detectMode;
-    //识别的最小人脸比例
     private int scaleVal;
-    //引擎最多能检测出的人脸数
     private int maxNum;
-    //需要启用的功能组合
     private int combinedMask;
     private Context mContext;
     private String appId;
     private String sdkKey;
+    /**
+     * 当前一帧人脸数据处理状态
+     */
+    private ConcurrentMap<Integer, Integer> currentFrameFace;
 
     private AIFace(Builder builder) {
         appId = builder.appId;
@@ -58,6 +65,7 @@ public class AIFace {
         combinedMask = builder.combinedMask;
         mContext = builder.context;
         faceEngine = new FaceEngine();
+        currentFrameFace = new ConcurrentHashMap<>();
         init();
     }
 
@@ -71,9 +79,16 @@ public class AIFace {
 
     public synchronized boolean init() {
         if (initSuccess) return true;
-        long begin = System.currentTimeMillis();
         initSuccess = false;
-        int code = FaceEngine.activeOnline(mContext, appId, sdkKey);
+        long begin = System.currentTimeMillis();
+        ActiveFileInfo activeFileInfo = new ActiveFileInfo();
+        int code = FaceEngine.getActiveFileInfo(mContext, activeFileInfo);
+        if (code == ErrorInfo.MOK) {
+            logger.i("activeFileInfo is : " + activeFileInfo);
+        } else {
+            logger.i("getActiveFileInfo failed, code is  : " + code);
+        }
+        code = FaceEngine.activeOnline(mContext, appId, sdkKey);
         logger.i("activeOnline  code is  : " + code);
         if (code != ErrorInfo.MOK && code != ErrorInfo.MERR_ASF_ALREADY_ACTIVATED) {
             return false;
@@ -88,11 +103,73 @@ public class AIFace {
         return true;
     }
 
+    public Map<Integer, Integer> getCurrentFrameFace() {
+        return currentFrameFace;
+    }
+
+    public int getFaceProcessState(FaceInfo faceInfo) {
+        if (faceInfo != null) {
+            return getFaceProcessState(faceInfo.getFaceId());
+        } else {
+            return ProcessState.NONE;
+        }
+    }
+
+    public int getFaceProcessState(int faceId) {
+        Integer state = currentFrameFace.get(faceId);
+        if (state == null) {
+            return ProcessState.NONE;
+        } else {
+            return state;
+        }
+    }
+
+    public void replaceFaceProcessState(int faceId, int processState) {
+        currentFrameFace.replace(faceId, processState);
+    }
+
+    /**
+     * 判断该人脸是否是人脸检测状态
+     *
+     * @param faceInfo
+     * @return
+     */
+    public boolean isFaceDetectState(FaceInfo faceInfo) {
+        if (faceInfo == null) {
+            return false;
+        }
+        Integer state = currentFrameFace.get(faceInfo.getFaceId());
+        if (state == null) {
+            return false;
+        } else {
+            return state == ProcessState.FD;
+        }
+    }
+
+    /**
+     * 判断该人脸是否是人脸特征值提取等待中
+     *
+     * @param faceInfo
+     * @return
+     */
+    public boolean isFRWaitingState(FaceInfo faceInfo) {
+        if (faceInfo == null) {
+            return false;
+        }
+        Integer state = currentFrameFace.get(faceInfo.getFaceId());
+        if (state == null) {
+            return false;
+        } else {
+            return state == ProcessState.FR_WAITING;
+        }
+    }
+
     public synchronized boolean isInit() {
         return initSuccess;
     }
 
     public synchronized void destroy() {
+        currentFrameFace.clear();
         initSuccess = false;
         faceEngine.unInit();
         faceEngine = null;
@@ -112,8 +189,29 @@ public class AIFace {
         long begin = System.currentTimeMillis();
         List<FaceInfo> result = new ArrayList<>();
         int code = faceEngine.detectFaces(nv21, width, height, FaceEngine.CP_PAF_NV21, result);
-        if (code == ErrorInfo.MOK && result.size() > 0) {
-            logger.i(String.format("detectFaces %d, time：%d", result.size(), (System.currentTimeMillis() - begin)));
+        if (code == ErrorInfo.MOK) {
+            if (result.size() > 0) {
+                logger.i(String.format("detectFaces %d, time：%d", result.size(), (System.currentTimeMillis() - begin)));
+            }
+            //判断是否与前一帧检测到的人脸结果属于同一个人
+            // 如果某个人脸框首次出现，或者如果某个trackid对应的人脸框仍未识别成功，都需要做FR操作。
+            Map<Integer, Integer> map = new HashMap();
+            for (FaceInfo faceInfo : result) {
+                //和上一帧人脸数据判断
+                Integer state = currentFrameFace.get(faceInfo.getFaceId());
+                if (state != null) {
+                    //人脸识别结束重置状态
+                    if (state > ProcessState.FR_PROCESSING) {
+                        map.put(faceInfo.getFaceId(), ProcessState.FD);
+                    } else {
+                        map.put(faceInfo.getFaceId(), state);
+                    }
+                } else {
+                    map.put(faceInfo.getFaceId(), ProcessState.FD);
+                }
+                currentFrameFace.clear();
+                currentFrameFace.putAll(map);
+            }
             return result;
         } else {
             logger.i(String.format("detectFace fail error code :%d", code));
@@ -171,22 +269,11 @@ public class AIFace {
                         , ageCode, face3DAngleCode, genderCode, livenessCode));
             } else {
                 for (int i = 0; i < faceSize; i++) {
-                    FaceInfo faceInfo = faceResult.get(i);
-                    AgeInfo ageInfo = ageResult.get(i);
-                    Face3DAngle face3DAngle = face3DAngleResult.get(i);
-                    GenderInfo genderInfo = genderInfoResult.get(i);
-                    LivenessInfo livenessInfo = livenessInfoResult.get(i);
-                    PersonModel personModel = new PersonModel();
-                    personModel.setRect(faceInfo.getRect());
-                    personModel.setFaceId(faceInfo.getFaceId());
-                    personModel.setOrient(faceInfo.getOrient());
-                    personModel.setPitch(face3DAngle.getPitch());
-                    personModel.setStatus(face3DAngle.getStatus());
-                    personModel.setRoll(face3DAngle.getRoll());
-                    personModel.setYaw(face3DAngle.getYaw());
-                    personModel.setAge(ageInfo.getAge());
-                    personModel.setGender(genderInfo.getGender());
-                    personModel.setLiveness(livenessInfo.getLiveness());
+                    PersonModel personModel = new PersonModel(faceResult.get(i),
+                            ageResult.get(i),
+                            face3DAngleResult.get(i),
+                            genderInfoResult.get(i),
+                            livenessInfoResult.get(i));
                     faceFindModels.add(personModel);
                 }
             }
@@ -230,22 +317,11 @@ public class AIFace {
                         , ageCode, face3DAngleCode, genderCode, livenessCode));
             } else {
                 for (int i = 0; i < faceSize; i++) {
-                    FaceInfo faceInfo = faceResult.get(i);
-                    AgeInfo ageInfo = ageResult.get(i);
-                    Face3DAngle face3DAngle = face3DAngleResult.get(i);
-                    GenderInfo genderInfo = genderInfoResult.get(i);
-                    LivenessInfo livenessInfo = livenessInfoResult.get(i);
-                    PersonModel personModel = new PersonModel();
-                    personModel.setRect(faceInfo.getRect());
-                    personModel.setFaceId(faceInfo.getFaceId());
-                    personModel.setOrient(faceInfo.getOrient());
-                    personModel.setPitch(face3DAngle.getPitch());
-                    personModel.setStatus(face3DAngle.getStatus());
-                    personModel.setRoll(face3DAngle.getRoll());
-                    personModel.setYaw(face3DAngle.getYaw());
-                    personModel.setAge(ageInfo.getAge());
-                    personModel.setGender(genderInfo.getGender());
-                    personModel.setLiveness(livenessInfo.getLiveness());
+                    PersonModel personModel = new PersonModel(faceResult.get(i),
+                            ageResult.get(i),
+                            face3DAngleResult.get(i),
+                            genderInfoResult.get(i),
+                            livenessInfoResult.get(i));
                     faceFindModels.add(personModel);
                 }
             }
@@ -303,6 +379,7 @@ public class AIFace {
         }
         return null;
     }
+
 
     /**
      * 摄像头一帧数据包含所有人脸特征信息数据
@@ -382,11 +459,14 @@ public class AIFace {
         if (!isInit()) return null;
         long begin = System.currentTimeMillis();
         FaceFeature result = new FaceFeature();
+        currentFrameFace.replace(faceInfo.getFaceId(), ProcessState.FR_PROCESSING);
         int code = faceEngine.extractFaceFeature(nv21, width, height, FaceEngine.CP_PAF_NV21, faceInfo, result);
         if (code == ErrorInfo.MOK) {
+            currentFrameFace.replace(faceInfo.getFaceId(), ProcessState.FR_PROCESSING, ProcessState.FR_SUCCESS);
             logger.i("findSingleFaceFeature time：" + (System.currentTimeMillis() - begin));
-            return new FeatureModel(width, height, faceInfo, result);
+            return new FeatureModel(faceInfo, result);
         } else {
+            currentFrameFace.replace(faceInfo.getFaceId(), ProcessState.FR_PROCESSING, ProcessState.FR_FAILED);
             logger.i(String.format("findSingleFaceFeature fail error code :%d", code));
             return null;
         }
@@ -399,18 +479,36 @@ public class AIFace {
      * @param faceInfo
      * @return
      */
-    public FeatureModel findSingleFaceFeature(CameraModel model, FaceInfo faceInfo) {
-        if (!isInit() || model == null) return null;
-        long begin = System.currentTimeMillis();
-        FaceFeature result = new FaceFeature();
-        int code = faceEngine.extractFaceFeature(model.getNv21(), model.getWidth(), model.getHeight(), FaceEngine.CP_PAF_NV21, faceInfo, result);
-        if (code == ErrorInfo.MOK) {
-            logger.i("findSingleFaceFeature time：" + (System.currentTimeMillis() - begin));
-            return new FeatureModel(model.getWidth(), model.getHeight(), faceInfo, result);
+    public OneFeatureCameraModel findSingleFaceFeatureCamera(CameraModel model, FaceInfo faceInfo) {
+        if (!isInit() || model == null || faceInfo == null) return null;
+        FeatureModel featureModel = findSingleFaceFeature(model.getNv21(), model.getWidth(), model.getHeight(), faceInfo);
+        if (featureModel != null) {
+            return new OneFeatureCameraModel(featureModel, model);
         } else {
-            logger.i(String.format("findSingleFaceFeature fail error code :%d", code));
             return null;
         }
+    }
+
+    public OneFeatureCameraModel findSingleFaceFeatureCamera(OneFaceCameraModel model) {
+        if (!isInit() || model == null) return null;
+        return findSingleFaceFeatureCamera(model, model.getFaceInfo());
+    }
+
+    /**
+     * 提取人脸特征数据
+     *
+     * @param model
+     * @param faceInfo
+     * @return
+     */
+    public FeatureModel findSingleFaceFeature(CameraModel model, FaceInfo faceInfo) {
+        if (!isInit() || model == null || faceInfo == null) return null;
+        return findSingleFaceFeature(model.getNv21(), model.getWidth(), model.getHeight(), faceInfo);
+    }
+
+    public FeatureModel findSingleFaceFeature(OneFaceCameraModel model) {
+        if (!isInit() || model == null) return null;
+        return findSingleFaceFeature(model, model.getFaceInfo());
     }
 
 
@@ -486,6 +584,27 @@ public class AIFace {
             return this;
         }
 
+        public Builder orientPriority(int orientation) {
+            switch (orientation) {
+                case 0:
+                    this.orientPriority = DetectFaceOrientPriority.ASF_OP_0_ONLY;
+                    break;
+                case 90:
+                    this.orientPriority = DetectFaceOrientPriority.ASF_OP_90_ONLY;
+                    break;
+                case 180:
+                    this.orientPriority = DetectFaceOrientPriority.ASF_OP_180_ONLY;
+                    break;
+                case 270:
+                    this.orientPriority = DetectFaceOrientPriority.ASF_OP_270_ONLY;
+                    break;
+                default:
+                    this.orientPriority = DetectFaceOrientPriority.ASF_OP_ALL_OUT;
+                    break;
+            }
+            return this;
+        }
+
         public Builder orientPriority(DetectFaceOrientPriority orientPriority) {
             this.orientPriority = orientPriority;
             return this;
@@ -514,7 +633,6 @@ public class AIFace {
         public AIFace build() {
             return new AIFace(this);
         }
-
     }
 
 }
