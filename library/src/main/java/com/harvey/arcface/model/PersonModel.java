@@ -48,6 +48,18 @@ public class PersonModel {
         this.ageInfo = ageInfo;
     }
 
+    public String getGender() {
+        switch (genderInfo.getGender()) {
+            case GenderInfo.MALE:
+                return "男";
+            case GenderInfo.FEMALE:
+                return "女";
+            default:
+                return "未知";
+        }
+
+    }
+
     public Face3DAngle getFace3DAngle() {
         return face3DAngle;
     }

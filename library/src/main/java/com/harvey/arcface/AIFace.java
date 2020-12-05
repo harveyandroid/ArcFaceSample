@@ -115,6 +115,15 @@ public class AIFace {
         }
     }
 
+    /**
+     * 是否有人脸
+     *
+     * @return
+     */
+    public boolean haveFace() {
+        return currentFrameFace.size() > 0;
+    }
+
     public int getFaceProcessState(int faceId) {
         Integer state = currentFrameFace.get(faceId);
         if (state == null) {
@@ -246,6 +255,7 @@ public class AIFace {
      */
     public List<PersonModel> detectPersons(byte[] nv21, int width, int height) {
         if (!isInit()) return null;
+        long begin = System.currentTimeMillis();
         List<FaceInfo> faceResult = detectFaces(nv21, width, height);
         if (faceResult == null || faceResult.size() == 0) {
             return null;
@@ -253,7 +263,7 @@ public class AIFace {
         int code = faceEngine.process(nv21, width, height, FaceEngine.CP_PAF_NV21, faceResult,
                 FaceAction.FACE_PROPERTY.combinedMask);
         int faceSize = faceResult.size();
-        logger.i("detectPersons faceSize：" + faceSize);
+//        logger.i(String.format("detectPersons faceSize：%d,耗时：%d", faceSize, (System.currentTimeMillis() - begin)));
         if (code == ErrorInfo.MOK) {
             List<PersonModel> faceFindModels = new ArrayList<>();
             List<AgeInfo> ageResult = new ArrayList<>();
@@ -277,6 +287,7 @@ public class AIFace {
                     faceFindModels.add(personModel);
                 }
             }
+            logger.i(String.format("detectPersons faceSize：%d,耗时：%d", faceFindModels.size(), (System.currentTimeMillis() - begin)));
             return faceFindModels;
         } else {
             logger.i(String.format("detectPersons process fail error code :%d", code));
@@ -296,12 +307,13 @@ public class AIFace {
         if (faceResult == null || faceResult.size() == 0) {
             return null;
         }
+        long begin = System.currentTimeMillis();
         int code = faceEngine.process(model.getNv21(), model.getWidth(), model.getHeight(),
                 FaceEngine.CP_PAF_NV21,
                 faceResult,
                 FaceAction.FACE_PROPERTY.combinedMask);
         int faceSize = faceResult.size();
-        logger.i("detectPersons faceSize：" + faceSize);
+//        logger.i(String.format("detectPersons faceSize：%d,耗时：%d", faceSize, (System.currentTimeMillis() - begin)));
         if (code == ErrorInfo.MOK) {
             List<PersonModel> faceFindModels = new ArrayList<>();
             List<AgeInfo> ageResult = new ArrayList<>();
@@ -324,6 +336,7 @@ public class AIFace {
                             livenessInfoResult.get(i));
                     faceFindModels.add(personModel);
                 }
+                logger.i(String.format("detectPersons faceSize：%d,耗时：%d", faceFindModels.size(), (System.currentTimeMillis() - begin)));
             }
             return faceFindModels;
         } else {

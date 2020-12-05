@@ -42,8 +42,15 @@ public enum FaceAction {
             | FaceEngine.ASF_AGE
             | FaceEngine.ASF_GENDER
             | FaceEngine.ASF_FACE3DANGLE
-            | FaceEngine.ASF_LIVENESS);
+            | FaceEngine.ASF_LIVENESS),
 
+    ALL(FaceEngine.ASF_FACE_DETECT
+            | FaceEngine.ASF_FACE_RECOGNITION
+            | FaceEngine.ASF_AGE
+            | FaceEngine.ASF_GENDER
+            | FaceEngine.ASF_FACE3DANGLE
+            | FaceEngine.ASF_LIVENESS
+            | FaceEngine.ASF_IR_LIVENESS);
     //需要启用的功能组合
     public int combinedMask;
 

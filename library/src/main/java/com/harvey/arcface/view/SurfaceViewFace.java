@@ -17,7 +17,8 @@ import android.view.SurfaceView;
 
 import com.arcsoft.face.FaceInfo;
 import com.harvey.arcface.R;
-import com.harvey.arcface.model.FaceCameraModel;
+import com.harvey.arcface.model.PersonCameraModel;
+import com.harvey.arcface.model.PersonModel;
 import com.harvey.arcface.utils.FaceUtils;
 
 import java.util.List;
@@ -37,10 +38,13 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
     private int surfaceWidth;
     private int surfaceHeight;
     // 人脸数据列表
-    private List<FaceInfo> faceInfoList;
+    private List<PersonModel> faceList;
     private boolean frontCamera = true;//默认前置
     private int displayOrientation = 0;
-    private Paint rectPaint;
+    private Paint faceInfoPaint;
+    private Paint textPaint;
+    private float textHeight;
+
     private Runnable drawRunnable = new Runnable() {
         // 旋转计数器
         int drawRotate = 0;
@@ -54,9 +58,9 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
                     Canvas canvas = surfaceHolder.lockCanvas();
                     if (canvas != null) {
                         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-                        for (FaceInfo faceInfo : faceInfoList) {
-                            drawFaceRect(canvas, faceInfo);
-                            drawFindFace(canvas, faceInfo);
+                        for (PersonModel model : faceList) {
+                            drawFaceInfo(canvas, model);
+                            drawFindFace(canvas, model);
                         }
                         drawRotate += 15;
                         drawRotateFind += 5;
@@ -66,13 +70,44 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
             }
         }
 
-        private void drawFaceRect(Canvas canvas, FaceInfo faceInfo) {
+        private void drawFaceInfo(Canvas canvas, PersonModel model) {
+            FaceInfo faceInfo = model.getFaceInfo();
             Rect mapRect = FaceUtils.adjustRect(faceInfo.getRect(), cameraWidth, cameraHeight,
                     displayOrientation, frontCamera, surfaceWidth, surfaceHeight);
-            canvas.drawRect(mapRect, rectPaint);
+            faceInfoPaint.setStyle(Paint.Style.STROKE);
+            canvas.drawRect(mapRect, faceInfoPaint);
+            int textRectPadding = 10;
+            int textRectWidth = (int) textPaint.measureText("性别:未知") + textRectPadding * 2;
+            int leftTextRect;
+            int topTextRect = (int) (mapRect.centerY() - textHeight * 2f - textRectPadding);
+            int rightTextRect;
+            int bottomTextRect = mapRect.centerY();
+            if (mapRect.centerX() > surfaceWidth / 2) {
+                leftTextRect = (mapRect.left - textRectWidth) / 2;
+                rightTextRect = leftTextRect + textRectWidth;
+                canvas.drawLine(mapRect.left, mapRect.top, rightTextRect, topTextRect, faceInfoPaint);
+            } else {
+                leftTextRect = mapRect.right + (surfaceWidth - mapRect.right - textRectWidth) / 2;
+                rightTextRect = leftTextRect + textRectWidth;
+                canvas.drawLine(mapRect.right, mapRect.top, leftTextRect, topTextRect, faceInfoPaint);
+            }
+            rightTextRect = leftTextRect + textRectWidth;
+            faceInfoPaint.setStyle(Paint.Style.FILL);
+            canvas.drawRect(leftTextRect, topTextRect, rightTextRect, bottomTextRect, faceInfoPaint);
+            canvas.drawText("性别:" + model.getGender(),
+                    leftTextRect + textRectPadding,
+                    topTextRect + textHeight / 2 + textRectPadding,
+                    textPaint);
+            canvas.drawText("年龄:" + model.getAgeInfo().getAge(),
+                    leftTextRect + textRectPadding,
+                    topTextRect + textHeight / 2 + textRectPadding + textHeight,
+                    textPaint);
         }
 
-        private void drawFindFace(Canvas canvas, FaceInfo model) {
+
+        private void drawFindFace(Canvas canvas, PersonModel model) {
+            FaceInfo faceInfo = model.getFaceInfo();
+
             Matrix matrix = new Matrix();
             Matrix matrix2 = new Matrix();
 
@@ -82,13 +117,13 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
             matrix.postRotate(drawRotate);// 步骤2
             matrix2.postRotate(360 - drawRotate * 2);// 步骤2
 
-            float scaleWidth = ((float) model.getRect().width() * (float) surfaceWidth
+            float scaleWidth = ((float) faceInfo.getRect().width() * (float) surfaceWidth
                     / (float) cameraWidth) / scan1.getWidth();
 
             matrix.postScale(scaleWidth, scaleWidth);
             matrix2.postScale(scaleWidth, scaleWidth);
             // 中心点计算
-            Rect mapRect = FaceUtils.adjustRect(model.getRect(), cameraWidth, cameraHeight,
+            Rect mapRect = FaceUtils.adjustRect(faceInfo.getRect(), cameraWidth, cameraHeight,
                     displayOrientation, frontCamera, surfaceWidth, surfaceHeight);
             int centerX = mapRect.centerX();
             int centerY = mapRect.centerY();
@@ -107,26 +142,39 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
         surfaceHolder.addCallback(this);
         // 透明背景
         surfaceHolder.setFormat(PixelFormat.TRANSPARENT);
-        faceInfoList = new CopyOnWriteArrayList<>();
+        faceList = new CopyOnWriteArrayList<>();
 
-        rectPaint = new Paint();
-        rectPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
-        rectPaint.setColor(Color.RED);
-        rectPaint.setStyle(Paint.Style.STROKE);
-        rectPaint.setStrokeWidth(5);
+        faceInfoPaint = new Paint();
+        faceInfoPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
+        faceInfoPaint.setColor(Color.parseColor("#4ed0ff"));
+        faceInfoPaint.setStyle(Paint.Style.STROKE);
+        faceInfoPaint.setStrokeWidth(4);
+
+        textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textPaint.setColor(Color.WHITE);
+        textPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        textPaint.setTextSize(16);
+        textPaint.setTextAlign(Paint.Align.LEFT);
+        Paint.FontMetrics fontMetrics = textPaint.getFontMetrics();
+        textHeight = fontMetrics.bottom - fontMetrics.top;
     }
 
     // 更新人脸列表
-    public void updateFace(FaceCameraModel model) {
+    public void updateFace(PersonCameraModel model) {
         surfaceStop = false;
         if (model != null) {
             cameraHeight = model.getHeight();
             cameraWidth = model.getWidth();
-            this.faceInfoList.clear();
-            this.faceInfoList.addAll(model.getFaceInfo());
+            this.faceList.clear();
+            this.faceList.addAll(model.getPersonModels());
         } else {
-            this.faceInfoList.clear();
+            this.faceList.clear();
         }
+    }
+
+    private int getTextHeight(Paint paint) {
+        Paint.FontMetrics fontMetrics = paint.getFontMetrics();
+        return (int) (fontMetrics.bottom - fontMetrics.top);
     }
 
     public void setFrontCamera(boolean frontCamera) {
