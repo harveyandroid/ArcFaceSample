@@ -19,6 +19,7 @@ import com.harvey.arcface.FaceMatchThread;
 import com.harvey.arcface.model.FaceAction;
 import com.harvey.arcface.model.FaceCameraModel;
 import com.harvey.arcface.model.FeatureModel;
+import com.harvey.arcface.model.PersonCameraModel;
 import com.harvey.arcface.view.SurfaceViewCamera;
 import com.harvey.arcface.view.SurfaceViewFace;
 import com.harvey.arcfacedamo.BuildConfig;
@@ -113,7 +114,7 @@ public class FaceScanActivity extends AppCompatActivity
         AIFace.showLog(BuildConfig.DEBUG);
         mAiFace = new AIFace
                 .Builder(this)
-                .combinedMask(FaceAction.DETECT_FACE_FEATURE)
+                .combinedMask(FaceAction.ALL_WITHOUT_IR)
                 .orientPriority(surfaceViewCamera.getCameraDisplayOrientation())
                 .build();
         matchHelper = new FaceMatchHelper(this, mAiFace);
@@ -159,7 +160,8 @@ public class FaceScanActivity extends AppCompatActivity
     public void onPreviewFrame(byte[] data, Camera camera) {
         Camera.Size size = camera.getParameters().getPreviewSize();
         FaceCameraModel faceCameraModel = mAiFace.detectFaceWithCamera(data, size.width, size.height);
-        surfaceViewFace.updateFace(faceCameraModel);
+        PersonCameraModel personCameraModel = mAiFace.detectPersonWithCamera(faceCameraModel);
+        surfaceViewFace.updateFace(personCameraModel);
         faceMatchThread.offerFaceCameraModel(faceCameraModel);
     }
 }

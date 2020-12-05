@@ -94,11 +94,11 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
             rightTextRect = leftTextRect + textRectWidth;
             faceInfoPaint.setStyle(Paint.Style.FILL);
             canvas.drawRect(leftTextRect, topTextRect, rightTextRect, bottomTextRect, faceInfoPaint);
-            canvas.drawText("性别:" + model.getGender(),
+            canvas.drawText("性别：" + model.getGender(),
                     leftTextRect + textRectPadding,
                     topTextRect + textHeight / 2 + textRectPadding,
                     textPaint);
-            canvas.drawText("年龄:" + model.getAgeInfo().getAge(),
+            canvas.drawText("年龄：" + model.getAgeInfo().getAge(),
                     leftTextRect + textRectPadding,
                     topTextRect + textHeight / 2 + textRectPadding + textHeight,
                     textPaint);
@@ -144,7 +144,8 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
         surfaceHolder.setFormat(PixelFormat.TRANSPARENT);
         faceList = new CopyOnWriteArrayList<>();
 
-        faceInfoPaint = new Paint();
+        faceInfoPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        faceInfoPaint.setAntiAlias(true);
         faceInfoPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
         faceInfoPaint.setColor(Color.parseColor("#4ed0ff"));
         faceInfoPaint.setStyle(Paint.Style.STROKE);
@@ -170,11 +171,6 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
         } else {
             this.faceList.clear();
         }
-    }
-
-    private int getTextHeight(Paint paint) {
-        Paint.FontMetrics fontMetrics = paint.getFontMetrics();
-        return (int) (fontMetrics.bottom - fontMetrics.top);
     }
 
     public void setFrontCamera(boolean frontCamera) {
