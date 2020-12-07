@@ -98,7 +98,7 @@ public class SurfaceViewFace extends SurfaceView implements SurfaceHolder.Callba
                     leftTextRect + textRectPadding,
                     topTextRect + textHeight / 2 + textRectPadding,
                     textPaint);
-            canvas.drawText("年龄：" + model.getAgeInfo().getAge(),
+            canvas.drawText("年龄：" + model.getAge(),
                     leftTextRect + textRectPadding,
                     topTextRect + textHeight / 2 + textRectPadding + textHeight,
                     textPaint);

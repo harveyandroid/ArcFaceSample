@@ -1,5 +1,7 @@
 package com.harvey.arcface.model;
 
+import android.graphics.Rect;
+
 import com.arcsoft.face.FaceFeature;
 import com.arcsoft.face.FaceInfo;
 
@@ -22,16 +24,24 @@ public class FeatureModel {
         return faceInfo;
     }
 
-    public void setFaceInfo(FaceInfo faceInfo) {
-        this.faceInfo = faceInfo;
-    }
-
-    public FaceFeature getFaceFeature() {
-        return faceFeature;
-    }
-
     public void setFaceFeature(FaceFeature faceFeature) {
         this.faceFeature = faceFeature;
+    }
+
+    public byte[] getFeatureData() {
+        return faceFeature.getFeatureData();
+    }
+
+    public Rect getFaceRect() {
+        return faceInfo.getRect();
+    }
+
+    public int getFaceId() {
+        return faceInfo.getFaceId();
+    }
+
+    public int getFaceOrient() {
+        return faceInfo.getOrient();
     }
 
     public FeatureModel clone() {

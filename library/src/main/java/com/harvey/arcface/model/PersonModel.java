@@ -1,5 +1,7 @@
 package com.harvey.arcface.model;
 
+import android.graphics.Rect;
+
 import com.arcsoft.face.AgeInfo;
 import com.arcsoft.face.Face3DAngle;
 import com.arcsoft.face.FaceInfo;
@@ -36,16 +38,16 @@ public class PersonModel {
         return faceInfo;
     }
 
-    public void setFaceInfo(FaceInfo faceInfo) {
-        this.faceInfo = faceInfo;
+    public Rect getFaceRect() {
+        return faceInfo.getRect();
     }
 
-    public AgeInfo getAgeInfo() {
-        return ageInfo;
+    public int getFaceId() {
+        return faceInfo.getFaceId();
     }
 
-    public void setAgeInfo(AgeInfo ageInfo) {
-        this.ageInfo = ageInfo;
+    public int getFaceOrient() {
+        return faceInfo.getOrient();
     }
 
     public String getGender() {
@@ -60,28 +62,21 @@ public class PersonModel {
 
     }
 
+    public int getGenderId() {
+        return genderInfo.getGender();
+
+    }
+
+    public int getAge() {
+        return ageInfo.getAge();
+    }
+
     public Face3DAngle getFace3DAngle() {
         return face3DAngle;
     }
 
-    public void setFace3DAngle(Face3DAngle face3DAngle) {
-        this.face3DAngle = face3DAngle;
-    }
-
-    public GenderInfo getGenderInfo() {
-        return genderInfo;
-    }
-
-    public void setGenderInfo(GenderInfo genderInfo) {
-        this.genderInfo = genderInfo;
-    }
-
-    public LivenessInfo getLivenessInfo() {
-        return livenessInfo;
-    }
-
-    public void setLivenessInfo(LivenessInfo livenessInfo) {
-        this.livenessInfo = livenessInfo;
+    public int getLiveness() {
+        return livenessInfo.getLiveness();
     }
 
     public PersonModel clone() {

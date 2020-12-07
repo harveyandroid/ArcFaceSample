@@ -4,13 +4,14 @@ import com.arcsoft.face.FaceInfo;
 import com.harvey.arcface.model.FaceCameraModel;
 import com.harvey.arcface.model.FeatureModel;
 import com.harvey.arcface.model.OneFaceCameraModel;
+import com.harvey.arcface.model.OneFeatureCameraModel;
 import com.harvey.arcface.model.ProcessState;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 /**
- * 人脸匹配线程
+ * 人脸匹配线程(匹配的是有效的人脸数据)
  * Created by hanhui on 2020/12/4 14:05
  */
 public abstract class FaceMatchThread extends Thread {
@@ -44,7 +45,13 @@ public abstract class FaceMatchThread extends Thread {
         }
     }
 
-    protected abstract void handleMatch(FeatureModel featureModel);
+    protected void handleMatch(OneFeatureCameraModel featureModel) {
+        handleMatch(featureModel.getFeatureModel());
+    }
+
+    protected void handleMatch(FeatureModel featureModel) {
+
+    }
 
     public void finish() {
         setToStop = true;
@@ -56,7 +63,7 @@ public abstract class FaceMatchThread extends Thread {
             try {
                 OneFaceCameraModel model = queue.take();
                 if (mAiFace.isFRWaitingState(model.getFaceInfo())) {
-                    FeatureModel featureModel = mAiFace.findSingleFaceFeature(model);
+                    OneFeatureCameraModel featureModel = mAiFace.findSingleFaceFeatureCamera(model);
                     if (featureModel != null) {
                         handleMatch(featureModel);
                     }
