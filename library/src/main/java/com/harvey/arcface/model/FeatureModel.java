@@ -28,6 +28,10 @@ public class FeatureModel {
         this.faceFeature = faceFeature;
     }
 
+    public FaceFeature getFaceFeature() {
+        return faceFeature;
+    }
+
     public byte[] getFeatureData() {
         return faceFeature.getFeatureData();
     }

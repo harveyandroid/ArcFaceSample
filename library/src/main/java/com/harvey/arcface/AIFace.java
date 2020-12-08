@@ -48,16 +48,12 @@ public class AIFace {
     private int maxNum;
     private int combinedMask;
     private Context mContext;
-    private String appId;
-    private String sdkKey;
     /**
      * 当前一帧人脸数据处理状态
      */
     private ConcurrentMap<Integer, Integer> currentFrameFace;
 
     private AIFace(Builder builder) {
-        appId = builder.appId;
-        sdkKey = builder.sdkKey;
         detectMode = builder.mode;
         orientPriority = builder.orientPriority;
         scaleVal = builder.scaleVal;
@@ -77,30 +73,43 @@ public class AIFace {
         logger.showStackTrace(isShowStackTrace);
     }
 
-    public synchronized boolean init() {
-        if (initSuccess) return true;
-        initSuccess = false;
+    /**
+     * 激活是耗时任务,需要在子线程处理
+     *
+     * @param context
+     * @param appId
+     * @param sdkKey
+     */
+    public static boolean activeOnline(Context context, String appId, String sdkKey) {
         long begin = System.currentTimeMillis();
+        int code = FaceEngine.activeOnline(context, appId, sdkKey);
+        boolean result = false;
+        logger.i("activeOnline  code is  : " + code + ",time：" + (System.currentTimeMillis() - begin));
+        if (code == ErrorInfo.MOK
+                || code == ErrorInfo.MERR_ASF_ALREADY_ACTIVATED) {
+            result = true;
+        }
         ActiveFileInfo activeFileInfo = new ActiveFileInfo();
-        int code = FaceEngine.getActiveFileInfo(mContext, activeFileInfo);
+        code = FaceEngine.getActiveFileInfo(context, activeFileInfo);
         if (code == ErrorInfo.MOK) {
             logger.i("activeFileInfo is : " + activeFileInfo);
         } else {
             logger.i("getActiveFileInfo failed, code is  : " + code);
         }
-        code = FaceEngine.activeOnline(mContext, appId, sdkKey);
-        logger.i("activeOnline  code is  : " + code);
-        if (code != ErrorInfo.MOK && code != ErrorInfo.MERR_ASF_ALREADY_ACTIVATED) {
-            return false;
-        }
-        code = faceEngine.init(mContext, detectMode, orientPriority, scaleVal, maxNum, combinedMask);
+        return result;
+    }
+
+    private void init() {
+        initSuccess = false;
+        long begin = System.currentTimeMillis();
+        int code = faceEngine.init(mContext, detectMode, orientPriority, scaleVal, maxNum, combinedMask);
         if (code != ErrorInfo.MOK) {
             logger.i(String.format("init fail error_code:%d", code));
-            return false;
+            initSuccess = false;
+        } else {
+            initSuccess = true;
         }
-        initSuccess = true;
         logger.i("init time：" + (System.currentTimeMillis() - begin));
-        return true;
     }
 
     public Map<Integer, Integer> getCurrentFrameFace() {
@@ -173,11 +182,11 @@ public class AIFace {
         }
     }
 
-    public synchronized boolean isInit() {
+    public boolean isInit() {
         return initSuccess;
     }
 
-    public synchronized void destroy() {
+    public void destroy() {
         currentFrameFace.clear();
         initSuccess = false;
         faceEngine.unInit();
@@ -564,8 +573,6 @@ public class AIFace {
         int scaleVal;
         //引擎最多能检测出的人脸数
         int maxNum;
-        String appId;
-        String sdkKey;
         Context context;
         //需要启用的功能组合
         int combinedMask;
@@ -577,19 +584,6 @@ public class AIFace {
             this.scaleVal = 16;
             this.maxNum = 25;
             this.combinedMask = FaceAction.DETECT.combinedMask;
-            //企业认证的key
-            this.appId = "CqqrPnuUjFhp4E8x3tK4ENZ5kwQEgPTs5oj46bsSLE7d";
-            this.sdkKey = "3Whu47h1z2tPtMwGVfKxZ82TLKSKVvCS7pL2AKEAez3n";
-        }
-
-        public Builder appId(String appId) {
-            this.appId = appId;
-            return this;
-        }
-
-        public Builder sdkKey(String sdkKey) {
-            this.sdkKey = sdkKey;
-            return this;
         }
 
         public Builder mode(DetectMode mode) {
