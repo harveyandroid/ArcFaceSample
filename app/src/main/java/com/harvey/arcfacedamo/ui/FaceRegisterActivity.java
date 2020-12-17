@@ -102,7 +102,6 @@ public class FaceRegisterActivity extends AppCompatActivity
                 .orientPriority(surfaceViewCamera.getCameraDisplayOrientation())
                 .build();
         faceRegisterHelper = new FaceMatchHelper(this, mAiFace);
-        AIFace.showLog(true);
         surfaceViewCamera.setCameraCallBack(this);
         surfaceViewSaveFace.uploadTimeSecondDown(1);
         surfaceViewSaveFace.setSaveFaceListener(new SurfaceViewSaveFace.SaveFaceListener() {
